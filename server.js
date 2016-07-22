@@ -26,7 +26,7 @@ s3.listObjects({Bucket: bucketName}, (err,data)=>{
 });
 
 
-const key = 'images/road.jpg';
+const key = './images/road.jpg';
 s3.headObject({Bucket:bucketName, Key:key}, (err, data)=>{
     console.log('== headObject');
     if(err && err.statusCode == 404 ){
