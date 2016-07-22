@@ -1,7 +1,7 @@
 const fs = require('fs');
 const pathUtil = require('path');
 const AWS = require('aws-sdk');
-const config = require('s3config');
+const config = require('./s3config.js');
 
 AWS.config.accessKeyId = config.accessKeyId;
 AWS.config.secretAccessKey = config.secretAccessKey;
