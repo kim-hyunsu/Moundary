@@ -1,8 +1,10 @@
-const express = require('express');
-const app = express();
+const AWS = require('aws-sdk');
+const config = require('./s3config.js');
 
-app.use((req, res)=>{
-    res.send({mag:'Hello Linux'});
-});
+AWS.config.accessKeyId = config.accessKeyId;
+AWS.config.secretAccessKey = config.secretAccessKey;
 
-app.listen(80);
+const s3 = new AWS.S3();
+
+console.log('endpoint : ', s3.endpoint);
+console.log('href', s3.endpoint.href);
