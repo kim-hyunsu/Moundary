@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const async = require('async');
+const formidable = require('formidable');
+var form = new formidable.IncomingForm();
+const fs = require('fs');
 const Post = require('./model/posts.js');
 const User = require('./model/users.js');
+const s3upload = require('./s3upload.js');
 
 // 친구소식 목록, 글 쓰기
 router.route('/post')
@@ -21,6 +24,9 @@ router.put('/post/like', likePost);
 // 친구 유무 확인
 router.get('/post/friend', checkFriend);
 
+// 내 이야기 목록
+router.get('/post/mine', myPostList);
+
 function newsList(req, res, next){
 
     const endPost = req.query.endPost;
@@ -28,6 +34,7 @@ function newsList(req, res, next){
     const userId = req.session.userId;
 
     var callback = function(err, results){
+        var data;
         if(err){
             data = {
                 msg: 'failure'
@@ -54,7 +61,76 @@ function newsList(req, res, next){
 }
 
 function writePost(req, res, next){
+    const now = new Date();
+    const date = {
+        year : now.getFullYear(),
+        month : now.getMonth()+1,
+        date : now.getDate(),
+        hours : now.getHours(),
+        minutes : now.getMinutes(),
+        seconds : now.getSeconds()
+    }
+    const userId = req.session.userId;
+    
+    form.encoding = 'utf-8';
+    form.keepExtension = true;
+    form.uploadDir = __dirname + '/upload';
 
+    form.parse(req, (err, fields, files)=>{
+        var data;
+        if (err){
+            data = {
+                msg : 'failure'
+            }
+            res.json(data);
+            return next(err);
+        }
+        const postContent = fields.postContent;
+        var image = files.image;
+        if (image && image.size > 0){
+            s3upload.original(image.name, 'postImg', date, userId, (err, imageUrl)=>{
+                if (err){
+                    data = {
+                        msg : 'fail to upload the image'
+                    }
+                    res.json(data);
+                    return next(err);
+                }
+                const post ={
+                    category : 'diary',
+                    userId : userId,
+                    postImg : imageUrl,
+                    postContent : postContent,
+                    postDate : date,
+                    likeUsers : [],
+                    reply : [] 
+                }
+                Post.recordPost(post, (err, postId)=>{
+                    if (err){
+                        data = {
+                            msg : 'fail to record on db'
+                        }
+                        res.json(data);
+                        return next(err);
+                    }
+                    fs.unlink('./upload/'+image.name, (err)=>{
+                        if (err){
+                            data = {
+                                msg : 'fail to delete the temporary file'
+                            }
+                            res.json(data);
+                            next(err);
+                        }
+                        data = {
+                            msg: 'success',
+                            postId : postId
+                        }
+                        res.json(data);
+                    });
+                });
+            });
+        }
+    });
 }
 
 function postDetail(req, res, next){
@@ -89,6 +165,10 @@ function checkFriend(req, res, next){
         }
         res.json(data);
     });
+
+}
+
+function myPostList(req, res, next){
 
 }
 

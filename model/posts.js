@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 class Post{}
 
-// 친구소식 불러오기
+// 친구소식
 Post.getPosts = function(endPost, userId, count, callback){
 
 }
@@ -12,10 +12,19 @@ Post.getLocalPosts = function(endPost, userId, count, callback){
 
 }
 
-// 동네소식 불러오기
-Post.getInfoPosts = function(endPost, area1, area2, area3, area4, count, callback){
+// 내 이야기 불러오기
+Post.getMyPosts = function(endPost, userId, count, callback){
 
 }
 
+// 동네소식 불러오기, postAddress is Object
+Post.getInfoPosts = function(endPost, postAddress, count, callback){
+
+}
+
+// 친구소식 db 저장, post is Object
+Post.recordPost = function(post, callback){
+    
+}
 
 module.exports = Post;
