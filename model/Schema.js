@@ -1,5 +1,7 @@
+const Schema = mongoose.Schema;
+
 const postSchema = mongoose.Schema({
-    postId : mongoose.Types.ObjectId,
+    postId : Schema.Types.ObjectId,
     category : Number,
     postAddress : {
         area1: String,
@@ -9,25 +11,25 @@ const postSchema = mongoose.Schema({
         area5: String
     },
     due : Date,
-    userId : mongoose.Types.ObjectId,
+    userId : Schema.Types.ObjectId,
     postImg : String,
     postThumbnail : String,
     postContent : String,
     postDate : Date,
-    postLikeUsers : [mongoose.Types.ObjectId],
+    postLikeUsers : [Schema.Types.ObjectId],
     reply : [{
-        replyId : mongoose.Types.ObjectId,
-        userId : mongoose.Types.ObjectId,
+        replyId : Schema.Types.ObjectId,
+        userId : Schema.Types.ObjectId,
         replyContent : String,
         replyDate : Date,
-        replyLikeUsers : [mongoose.Types.ObjectId]
+        replyLikeUsers : [Schema.Types.ObjectId]
     }]
 });
 
 module.exports.post = postSchema;
 
 const userSchema = mongoose.Schema({
-    userId : mongoose.Types.ObjectId,
+    userId : Schema.Types.ObjectId,
     policyAgreeDate : Date,
     personalInfoAgreeDate : Date,
     profileImg : String,
@@ -47,7 +49,7 @@ const userSchema = mongoose.Schema({
         event : Boolean,
         share : Boolean
     },
-    friendList : [mongoose.Types.ObjectId],
+    friendList : [Schema.Types.ObjectId],
     babyInfo : [Number],
     alram : {
         moundaryAlarm : Boolean,
@@ -60,9 +62,9 @@ const userSchema = mongoose.Schema({
 module.exports.user = userSchema;
 
 const holderSchema =  mongoose.Schema({
-    _id : mongoose.Types.ObjectId,
-    requestUserId : mongoose.Types.ObjectId,
-    responseUserId : mongoose.Types.ObjectId,
+    _id : Schema.Types.ObjectId,
+    requestUserId : Schema.Types.ObjectId,
+    responseUserId : Schema.Types.ObjectId,
     requestDate : Date
 });
 

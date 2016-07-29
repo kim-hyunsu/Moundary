@@ -99,21 +99,29 @@ const post = mongoose.model('post', postSchema);
 //     });
 // });
 
-user.aggregate()
-    .unwind('$friendList')
-    .lookup({from : 'posts', localField : 'friendList', foreignField : 'userId', as : 'posts'})
-    .match({'_id' : mongoose.Types.ObjectId("579b1a256cb651040bd91edf")})
-    .project('posts')
-    .unwind('$posts')
-    .sort({field:'posts'})
+// user.aggregate()
+//     .unwind('$friendList')
+//     .lookup({from : 'posts', localField : 'friendList', foreignField : 'userId', as : 'posts'})
+//     .match({'_id' : mongoose.Types.ObjectId("579b1a256cb651040bd91ede")})
+//     .unwind('$posts')
+//     .project('posts')
+//     .sort({'posts.postContent':-1})
+//     .then((results)=>{
+//         console.log('results', results);
+//         async.eachSeries(results, (item, next)=>{
+//             console.log('item',item);
+//             console.log(item._id.toString());
+//             next(null, item);
+//         }, (err, result)=>{
+//             // console.log(err);
+//         });
+//     }, (err)=>{
+//         console.log(err);
+//     });
+
+user.findOne({_id : mongoose.Types.ObjectId("579b1a256cb651040bd91ede")}, 'friendList')
     .then((results)=>{
-        async.eachSeries(results, (item, next)=>{
-            console.log(item);
-            next(null, item);
-        }, (err, result)=>{
-            // console.log(err);
-        });
-        
+        console.log(results.friendList[0]);
     }, (err)=>{
         console.log(err);
     });
