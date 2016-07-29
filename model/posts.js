@@ -1,10 +1,11 @@
-const mongoose = require('mongoose');
+const postSchema = require('./Schema').post;
+var posts = mongoose.model('post', postSchema);
 
 class Post{}
 
 // 친구소식
 Post.getPosts = function(endPost, userId, count, callback){
-
+    posts.find()
 }
 
 // 친구가 아직 없을 때 지역소식 불러오기

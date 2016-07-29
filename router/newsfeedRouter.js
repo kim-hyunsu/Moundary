@@ -62,14 +62,6 @@ function newsList(req, res, next){
 
 function writePost(req, res, next){
     const now = new Date();
-    const date = {
-        year : now.getFullYear(),
-        month : now.getMonth()+1,
-        date : now.getDate(),
-        hours : now.getHours(),
-        minutes : now.getMinutes(),
-        seconds : now.getSeconds()
-    }
     const userId = req.session.userId;
     
     form.encoding = 'utf-8';
@@ -101,8 +93,8 @@ function writePost(req, res, next){
                     userId : userId,
                     postImg : imageUrl,
                     postContent : postContent,
-                    postDate : date,
-                    likeUsers : [],
+                    postDate : now,
+                    postLikeUsers : [],
                     reply : [] 
                 }
                 Post.recordPost(post, (err, postId)=>{
@@ -129,6 +121,13 @@ function writePost(req, res, next){
                     });
                 });
             });
+        }
+        else{
+            data = {
+                msg: 'No image input'
+            }
+            res.json(data);
+            return next(new Error('No image input'));
         }
     });
 }
