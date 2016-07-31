@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const postSchema = require('./Schema').post;
 const userSchema = require('./Schema').user;
 var post = mongoose.model('post', postSchema);
@@ -6,10 +7,13 @@ class Post{}
 
 // 친구소식
 Post.getPosts = function(endPost, userId, count, callback){
+    if (!endPost){
+        endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
+    }
     user.findOne({_id : mongoose.Types.ObjectId(userId)}, 'friendList')
         .then((results)=>{
             const friendList = results.friendList;
-            post.find({_id:{$gt: mongoose.Types.ObjectId(endPost)}})
+            post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}})
             .where('userId').in(friendList)
             .limit(count)
             .then((results)=>{
@@ -36,7 +40,7 @@ Post.getInfoPosts = function(endPost, postAddress, count, callback){
 
 }
 
-// 친구소식 db 저장, post is Object
+// 게시물 db 저장, post is Object
 Post.recordPost = function(post, callback){
     
 }

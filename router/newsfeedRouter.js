@@ -3,8 +3,8 @@ const router = express.Router();
 const formidable = require('formidable');
 var form = new formidable.IncomingForm();
 const fs = require('fs');
-const Post = require('./model/posts.js');
-const User = require('./model/users.js');
+const Post = require('../model/posts.js');
+const User = require('../model/users.js');
 const s3upload = require('./s3upload.js');
 
 // 친구소식 목록, 글 쓰기
@@ -31,7 +31,7 @@ function newsList(req, res, next){
 
     const endPost = req.query.endPost;
     const friend = req.query.friend;
-    const userId = req.session.userId;
+    const userId = req.query.userId;
 
     var callback = function(err, results){
         var data;
@@ -62,7 +62,7 @@ function newsList(req, res, next){
 
 function writePost(req, res, next){
     const now = new Date();
-    const userId = req.session.userId;
+    const userId = req.query.userId;
     
     form.encoding = 'utf-8';
     form.keepExtension = true;
@@ -89,7 +89,7 @@ function writePost(req, res, next){
                     return next(err);
                 }
                 const post ={
-                    category : 'diary',
+                    category : 0, //diary
                     userId : userId,
                     postImg : imageUrl,
                     postContent : postContent,
@@ -150,7 +150,7 @@ function likePost(req, res, next){
 
 function checkFriend(req, res, next){
     Post.getFriendCount((err, results)=>{
-        const data;
+        var data;
         if (err){
             data = {
                 msg: 'failure'

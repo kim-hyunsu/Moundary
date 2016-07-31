@@ -8,7 +8,7 @@ const config = require('./s3config.js');
 class s3upload{};
 
 AWS.config.accessKeyId = config.accessKeyId;
-AwS.config.secretAccessKey = config.secretAccessKey;
+AWS.config.secretAccessKey = config.secretAccessKey;
 const bucketName = 'moundary';
 
 // folder : postImg, postThumbnail, profileImg, profileThumbnail, coverImg
