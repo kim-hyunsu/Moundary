@@ -30,7 +30,7 @@ app.listen(3000);
 
 //errorCtrl
 function errorCtrl(err, req, res, next){
-    res.sendStatus(err.code);
+    res.send(err.code);
     console.log('==ERROR MESSAGE========================================');
     console.log(err);
     console.log('==ERROR MESSAGE========================================');

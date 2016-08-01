@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const postSchema = mongoose.Schema({
+const postSchema = Schema({
     postId : Schema.Types.ObjectId,
     category : Number,
     postAddress : {
@@ -29,7 +29,7 @@ const postSchema = mongoose.Schema({
 
 module.exports.post = postSchema;
 
-const userSchema = mongoose.Schema({
+const userSchema = Schema({
     userId : Schema.Types.ObjectId,
     policyAgreeDate : Date,
     personalInfoAgreeDate : Date,
@@ -51,7 +51,7 @@ const userSchema = mongoose.Schema({
         share : Boolean
     },
     friendList : [Schema.Types.ObjectId],
-    babyInfo : [Number],
+    babyAge : [Number],
     alram : {
         moundaryAlarm : Boolean,
         replyAlarm : Boolean,
@@ -62,7 +62,7 @@ const userSchema = mongoose.Schema({
 
 module.exports.user = userSchema;
 
-const holderSchema =  mongoose.Schema({
+const holderSchema =  Schema({
     _id : Schema.Types.ObjectId,
     requestUserId : Schema.Types.ObjectId,
     responseUserId : Schema.Types.ObjectId,

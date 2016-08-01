@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 const postSchema = require('./Schema').post;
 const userSchema = require('./Schema').user;
 var post = mongoose.model('post', postSchema);
@@ -41,8 +42,25 @@ Post.getInfoPosts = function(endPost, postAddress, count, callback){
 }
 
 // 게시물 db 저장, post is Object
-Post.recordPost = function(post, callback){
-    
+// diary ={
+//     category : 0, //diary
+//     userId : userId,
+//     postImg : imageUrl,
+//     postContent : postContent,
+//     postDate : now,
+//     postLikeUsers : [],
+//     reply : [] 
+// }
+Post.recordPost = function(diary, callback){
+    console.log('Recording the post');
+    diary.userId = Schema.Types.ObjectId(diary.userId);
+    post.create(diary, (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        console.log('Recoding Complete');
+        callback(null, result._id);
+    });
 }
 
 module.exports = Post;

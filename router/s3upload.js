@@ -1,48 +1,56 @@
-const fs = require('fs');
-const pathUtil = require('path');
 var AWS = require('aws-sdk');
-var s3 = new AWS.S3();
-const im = require('imagemagick');
+const fs = require('fs');
 const config = require('./s3config.js');
-
-class s3upload{};
-
+AWS.config.region = 'ap-northeast-2';
 AWS.config.accessKeyId = config.accessKeyId;
 AWS.config.secretAccessKey = config.secretAccessKey;
+var s3 = new AWS.S3();
+const im = require('imagemagick');
+const pathUtil = require('path');
+ 
+
+class s3upload{};
 const bucketName = 'moundary';
 
 // folder : postImg, postThumbnail, profileImg, profileThumbnail, coverImg
 
 // 원본 이미지 업로드 => callback(err, imageUrl)
-s3upload.original = function(imageName, folder, date, userId, callback){
-    const file = '../upload/'+imageName;
-    const readStream = fs.createReadStream(file);
-    const extname = pathUtil.extname(file);
-    const itemKey = folder+'/'+date.year+date.month+date.date+date.hours
-                    +date.minutes+date.seconds+'_'+userId+extname;
+s3upload.original = function(image, folder, date, userId, callback){
+    if (!image && image.size>0){
+        return callback(null, null);
+    }
+    console.log('Uploading the image to s3 >>>', image.path)
+    var readStream = fs.createReadStream(image.path);
+    const extname = pathUtil.extname(image.path);
+    const itemKey = folder+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
+                    +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
     const params = {
         Bucket : bucketName,
         Key : itemKey,
-        ACL : 'pubic-read',
-        Body : readStream
+        ACL : 'public-read',
+        Body : readStream,
+        ContentType : readStream.ContentType
     }
     s3.putObject(params, (err, data)=>{
         if (err){
             return callback(err, null);
         }
         const path = 'http://' + s3.endpoint.host + '/' + bucketName + '/'+ itemKey;
-        callback(null, path);
+        console.log('Upload Complete >>>', path);
+        callback(null, path);   
     });
 }
 
 //썸네일 이미지 변환 후 썸네일 업로드 => callback(err, imageUrl)
-s3upload.thumbnail = function(imageName, folder, date, userId, callback){
-    const file = '../upload' + imageName;
-    const thumbnail = '../upload' + 'tumbnail_'+imageName;
+s3upload.thumbnail = function(image, folder, date, userId, callback){
+    if (!image && image.size>0){
+        return callback(null, null);
+    }
+    const thumbnail = __dirname+'/../upload' + 'thumbnail_'+pathUtil.basename(image.path);
 
     im.resize({
-        srcPath : file,
-        dstPath : tumbnail,
+        srcPath : image.path,
+        dstPath : thumbnail,
         // TODO-썸네일사이즈 결정하기//
         
 
@@ -51,13 +59,12 @@ s3upload.thumbnail = function(imageName, folder, date, userId, callback){
         if (err){
             return callback(err, null);
         }
-        const extname = pathUtil.extname(thumbnail);
-        const itemKey = folder+'/'+date.year+date.month+date.date+date.hours
-                        +date.minutes+date.seconds+'_'+userId+extname;
+        const itemKey = folder+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
+                    +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
         const params = {
             Bucket : bucketName,
             Key : itemKey,
-            ACL : 'pubic-read',
+            ACL : 'public-read',
             Body : stdout
         }
         s3.putObject(params, (err, data)=>{
