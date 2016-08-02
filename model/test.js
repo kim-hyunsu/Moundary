@@ -5,7 +5,7 @@ use moundary;
 // db.post.insert({postId : 'post3id', userId : 'user2id', postContent : '유저 2, 2222'});
 
 
-// db.user.insert({userId : 'user1id', friendList : ['user2id']});
+db.user.insert({friendList : [ObjectId("579ea89d5aff3e081b313d23"),]});
 // db.user.insert({userId : 'user2id', friendList : ['user1id']});
 
 // db.user.aggregate([

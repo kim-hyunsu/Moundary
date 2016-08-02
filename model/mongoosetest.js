@@ -14,7 +14,7 @@ const user = mongoose.model('user', userSchema);
 postSchema = mongoose.Schema({
     postId : mongoose.Schema.Types.ObjectId,
     userId : mongoose.Schema.Types.ObjectId,
-
+    postLikeUsers : [mongoose.Schema.Types.ObjectId],
     postContent : String
 });
 
@@ -43,9 +43,9 @@ const post = mongoose.model('post', postSchema);
 // var user2 = new user({_id : user2id, friendList : [user1id, user3id]});
 // var user3 = new user({_id : user3id, friendList : [user2id, user1id]});
 
-// var post1 = new post({userId : user1id, postContent : '포스트1'});
-// var post2 = new post({userId : user2id, postContent : '포스트2'});
-// var post3 = new post({userId : user3id, postContent : '포스트3'});
+// var post1 = new post({userId : user1id, postContent : '포스트1', postLikeUsers : [user2id, user3id]});
+// var post2 = new post({userId : user2id, postContent : '포스트2', postLikeUsers : [user1id, user3id]});
+// var post3 = new post({userId : user3id, postContent : '포스트3', postLikeUsers : [user2id, user1id]});
 // user.create({num:4}, (err, result)=>{
 //     user.create({num:5}, (err,result)=>{
 //         user.create({num:6}, (err,result)=>{});
@@ -119,9 +119,9 @@ const post = mongoose.model('post', postSchema);
 //         console.log(err);
 //     });
 
-user.findOne({_id : mongoose.Types.ObjectId("579b1a256cb651040bd91ede")}, 'friendList')
-    .then((results)=>{
-        console.log(results.friendList[0]);
-    }, (err)=>{
-        console.log(err);
-    });
+// user.findOne({_id : mongoose.Types.ObjectId("579b1a256cb651040bd91ede")}, 'friendList')
+//     .then((results)=>{
+//         console.log(results.friendList[0]);
+//     }, (err)=>{
+//         console.log(err);
+//     });

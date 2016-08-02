@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const formidable = require('formidable');
-var form = new formidable.IncomingForm();
-const User = require('./users.js');
+
+const User = require('../model/users.js');
 
 router.put('/auth/signup',signup);
 
@@ -15,6 +15,7 @@ router.post('/auth/kakao', kakaoLogin);
 function signup(req, res, next){
     const now = new Date();
     const userId = req.query.userId;
+    var form = new formidable.IncomingForm();
     form.encoding = 'utf-8';
     form.keepExtensions = true;
     form.uploadDir = __dirname + '/../upload';
@@ -60,15 +61,15 @@ function signup(req, res, next){
                 res.json(data);
             });
         }
-        s3upload.original(profileImg, 'profileImg', now, userId, (err, profileImageUrl)=>{
+        s3upload.original(profileImg.path, 'profileImg', now, userId, (err, profileImageUrl)=>{
             if (err){
                 return next(err);
             }
-            s3upload.thumbnail(profileImg, 'profileThumbnail', now, userId, (err, profileThumbnailUrl)=>{
+            s3upload.thumbnail(profileImg.path, 'profileThumbnail', now, userId, (err, profileThumbnailUrl)=>{
                 if (err){
                     return next(err);
                 }
-                s3upload.original(coverImg, 'coverImg', now, userId, (err, coverImageUrl)=>{
+                s3upload.original(coverImg.path, 'coverImg', now, userId, (err, coverImageUrl)=>{
                     if (err){
                         return next(err);
                     }

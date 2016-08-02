@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const url = 'mongodb://52.78.98.25:27017/moundary';
+mongoose.connect(url);
+var db = mongoose.connection;
 const userSchema = require('./Schema.js').user;
 const user = mongoose.model('user', userSchema);
 class User{}

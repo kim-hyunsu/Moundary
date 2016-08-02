@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const formidable = require('formidable');
-var form = new formidable.IncomingForm();
+
 const fs = require('fs');
 const Post = require('../model/posts.js');
 const User = require('../model/users.js');
@@ -43,7 +43,7 @@ function newsList(req, res, next){
             msg : 'success',
             page : {
                 postCount : results.length,
-                endPost : results[0].postId
+                endPost : results[results.length-1].postId
             },
             data : results
         }
@@ -65,7 +65,7 @@ function writePost(req, res, next){
     const now = new Date();
     // bring the userId from the session
     const userId = req.query.userId;
-    
+    var form = new formidable.IncomingForm();
     form.encoding = 'utf-8';
     form.keepExtensions = true;  // save with extension
     form.uploadDir = __dirname + '/../upload'; // saved a temporary image file automatically in upload folder
@@ -79,59 +79,70 @@ function writePost(req, res, next){
         console.log('parsed the multipart request');
         const postContent = fields.postContent;
         var postImg = files.postImg;
-        console.log('Path of the image >>>', postImg.path);
-        // if the postImg exists,
-        if (postImg && postImg.size > 0){
-            console.log('Got a image >>>', postImg.name);
-            // upload the original image to s3
-            s3upload.original(postImg, 'postImg', now, userId, (err, imageUrl)=>{
+        // upload the original image to s3
+        s3upload.original(postImg.path, 'postImg', now, userId, (err, imageUrl)=>{
+            if (err){
+                fs.unlink(postImg.path, (err)=>{
+                    if (err){
+                        console.log('fail to delete the empty image');
+                    }
+                    else{
+                        console.log('Deleted a empty image');
+                    }
+                    return next(err);   
+                });
+            }
+            console.log('Uploaded the post image');
+            // post infomations
+            const diary = {
+                category : 0, //diary
+                userId : userId,
+                postImg : imageUrl,
+                postContent : postContent,
+                postDate : now,
+                postLikeUsers : [],
+                reply : [] 
+            }
+            // create a document of the post on the post collection of the db, 'moundary'
+            Post.recordPost(diary, (err, postId)=>{
                 if (err){
                     return next(err);
                 }
-                console.log('Uploaded the post image');
-                // post infomations
-                const diary = {
-                    category : 0, //diary
-                    userId : userId,
-                    postImg : imageUrl,
-                    postContent : postContent,
-                    postDate : now,
-                    postLikeUsers : [],
-                    reply : [] 
-                }
-                // create a document of the post on the post collection of the db, 'moundary'
-                Post.recordPost(diary, (err, postId)=>{
+                console.log('Recorded the post on the db');
+                // delete the temporary file in upload folder
+                fs.unlink(postImg.path, (err)=>{
                     if (err){
-                        return next(err);
+                        console.log('Fail to delete a temporary file,', postImg.path);
                     }
-                    console.log('Recorded the post on the db');
-                    // delete the temporary file in upload folder
-                    fs.unlink(postImg.path, (err)=>{
-                        if (err){
-                            data = {
-                                msg : 'fail to delete the temporary file'
-                            }
-                            res.json(data);
-                            return;
-                        }
+                    else{
                         console.log('Removed the temporary image of the post');
-                        data = {
-                            msg: 'success',
-                            postId : postId
-                        }
-                        res.json(data);
-                    });
+                    }
+                    data = {
+                        msg: 'success',
+                        postId : postId.toString()
+                    }
+                    console.log('Final data >>>', data);
+                    res.send(data);
+                    console.log('RESPONSE COMPLETE');
                 });
             });
-        }
-        else{
-            return next(new Error('No image input'));
-        }
+        });
     });
 }
 
 function postDetail(req, res, next){
-
+    const postId = req.query.postId;
+    Post.getPostDetail(postId, (err, results)=>{
+        if (err){
+            return next(err);
+        }
+        const replyInfo = results.reply
+        const data = {
+            msg : 'success',
+            postInfo :
+            
+        }
+    });
 }
 
 function modifyInfo(req, res, next){

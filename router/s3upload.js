@@ -15,13 +15,14 @@ const bucketName = 'moundary';
 // folder : postImg, postThumbnail, profileImg, profileThumbnail, coverImg
 
 // 원본 이미지 업로드 => callback(err, imageUrl)
-s3upload.original = function(image, folder, date, userId, callback){
-    if (!image && image.size>0){
+s3upload.original = function(imagePath, folder, date, userId, callback){
+    const extname = pathUtil.extname(imagePath);
+    if (extname.length == 0){
+        console.log('No input image');
         return callback(null, null);
     }
-    console.log('Uploading the image to s3 >>>', image.path)
-    var readStream = fs.createReadStream(image.path);
-    const extname = pathUtil.extname(image.path);
+    console.log('Uploading the image to s3 >>>', imagePath)
+    var readStream = fs.createReadStream(imagePath);
     const itemKey = folder+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
                     +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
     const params = {
@@ -42,14 +43,15 @@ s3upload.original = function(image, folder, date, userId, callback){
 }
 
 //썸네일 이미지 변환 후 썸네일 업로드 => callback(err, imageUrl)
-s3upload.thumbnail = function(image, folder, date, userId, callback){
-    if (!image && image.size>0){
+s3upload.thumbnail = function(imagePath, folder, date, userId, callback){
+    const extname = pathUtil.extname(imagePath);
+    if (extname.length == 0){
         return callback(null, null);
     }
-    const thumbnail = __dirname+'/../upload' + 'thumbnail_'+pathUtil.basename(image.path);
+    const thumbnail = __dirname+'/../upload' + 'thumbnail_'+pathUtil.basename(imagePath);
 
     im.resize({
-        srcPath : image.path,
+        srcPath : imagePath,
         dstPath : thumbnail,
         // TODO-썸네일사이즈 결정하기//
         

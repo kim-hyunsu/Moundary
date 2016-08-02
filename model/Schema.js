@@ -13,6 +13,7 @@ const postSchema = Schema({
     },
     due : Date,
     userId : Schema.Types.ObjectId,
+    nickname : String,
     postImg : String,
     postThumbnail : String,
     postContent : String,
@@ -36,6 +37,8 @@ const userSchema = Schema({
     profileImg : String,
     profileThumbnail : String,
     coverImg : String,
+    nickname : String,
+    userEmail : String,
     userAdress : {
         area1 : String,
         area2 : String,
