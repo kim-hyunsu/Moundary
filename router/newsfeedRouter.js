@@ -136,12 +136,16 @@ function postDetail(req, res, next){
         if (err){
             return next(err);
         }
-        const replyInfo = results.reply
+        const replyInfo = results.reply;
+        delete results.reply;
+        results.replyCount = replyInfo.length;
+        results.replyPage = 10; //상세페이지에서 처음에 보여줄 댓글 갯수
         const data = {
             msg : 'success',
-            postInfo :
-            
+            postInfo : results,
+            replyInfo : replyInfo
         }
+        res.json(data);
     });
 }
 

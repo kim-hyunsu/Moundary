@@ -9,56 +9,26 @@ var user = mongoose.model('user', userSchema);
 class Post{}
 
 // 친구소식
-// function temp(endPost, userId, count, callback){
-//     if (!endPost){
-//         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-//     }
-//     user.findOne({_id : userId}, 'friendList')
-//         .then((results)=>{
-//             const friendList = results.friendList;
-//             console.log('FRIEDNLIST', friendList)
-//             post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}})
-//             .where('userId').in(friendList)
-//             .limit(count)
-//             .then((results)=>{
-//                 callback(null, results);
-//             }, (err)=>{
-//                 callback(err, null);
-//             });
-//         }, (err)=>{
-//             callback(err, null);
-//     });
-// }
-///////////////////////////////////////////////////////// 그냥 다 긁어와서 for문 돌려서 mylike 넣기
-// Post.getPosts = function(endPost, userId, count, callback){
-//     if (!endPost){
-//         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-//     }
-//     user.findOne({_id : userId}, 'friendList')
-//         .then((results)=>{
-//             const friendList = results.friendList;
-//             console.log('FRIEDNLIST', friendList);
-//             post.aggregate()
-//             .match({_id:{$lt: mongoose.Types.ObjectId(endPost)}, userId :{$in: friendList}})
-//             .limit(count)   
-//             .then((results)=>{
-//                 callback(null, results);
-//             }, (err)=>{
-//                 callback(err, null);
-//             });
-//         }, (err)=>{
-//             callback(err, null);
-//     });
-// }
-
-Post.getPosts(null, "57a04ad314779f0c027a9b0e", 5, (err, result)=>{
-    if (err){
-        console.log('err',err);
+Post.getPosts = function(endPost, userId, count, callback){
+    if (!endPost){
+        endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }
-    else{
-        console.log('result',result);
-    }
-});
+    user.findOne({_id : userId}, 'friendList')
+        .then((results)=>{
+            const friendList = results.friendList;
+            console.log('FRIEDNLIST', friendList);
+            post.aggregate()
+            .match({_id:{$lt: mongoose.Types.ObjectId(endPost)}, userId :{$in: friendList}})
+            .limit(count)   
+            .then((results)=>{
+                callback(null, results);
+            }, (err)=>{
+                callback(err, null);
+            });
+        }, (err)=>{
+            callback(err, null);
+    });
+}
 
 // 게시물 db 저장, post is Object
 // diary ={

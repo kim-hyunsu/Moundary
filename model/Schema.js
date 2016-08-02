@@ -20,11 +20,13 @@ const postSchema = Schema({
     postDate : Date,
     postLikeUsers : [Schema.Types.ObjectId],
     reply : [{
-        replyId : Schema.Types.ObjectId,
+        replyId : Number,  // should be implement as auto increment
         userId : Schema.Types.ObjectId,
+        profileThumbnail : String,
+        nickname : String,  
         replyContent : String,
         replyDate : Date,
-        replyLikeUsers : [Schema.Types.ObjectId]
+        replyLikeUsers : [Schema.Types.ObjectId] 
     }]
 });
 
