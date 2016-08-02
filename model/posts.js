@@ -57,7 +57,12 @@ Post.recordPost = function(diary, callback){
 
 // 게시물 상세 정보 가져오기
 Post.getPostDetail = function(postId, callback){
-
+    post.find({_id : postId}, (err, results)=>{
+        if (err){
+            return callback(err, null);
+        }
+        callback(null, results);
+    });
 }
 
 // 친구가 아직 없을 때 지역소식 불러오기
