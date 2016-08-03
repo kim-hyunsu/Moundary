@@ -13,7 +13,7 @@ Post.getPosts = function(endPost, userId, count, callback){
     if (!endPost){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }
-    user.findOne({_id : userId}, 'friendList')
+    user.findOne({_id : userId}, 'friendList -_id')
         .then((results)=>{
             const friendList = results.friendList;
             console.log('FRIEDNLIST', friendList)
@@ -71,15 +71,15 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }
     var query = {};
-    var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
     for(var key in postAddress){
         query["postAddress."+key] = postAddress[key];
     }
     if (category){
         query.category = category;
     }
-    else{
-        promise = promise.where('category').ne(0)
+    var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
+    if (!category){
+        promise = promise.where('category').ne(0);
     }
     promise.limit(count)
         .then((results)=>{
@@ -115,8 +115,10 @@ Post.getMyPosts = function(endPost, userId, count, callback){
 Post.recordPost = function(diary, callback){
     console.log('Recording the post');
     diary.userId = mongoose.Types.ObjectId(diary.userId);
-    user.findOne({_id : diary.userId}, 'nickname', (err, result)=>{
-        diary.nickname = result.nickname;
+    user.findOne({_id : diary.userId}, 'nickname profileThumbnail', (err, results)=>{
+        diary.nickname = results.nickname;
+        diary.profileThumbnail = results.profileThumbnail;
+        diary.replyCount = 0;
         post.create(diary, (err, result)=>{
             if (err){
                 return callback(err, null);
@@ -138,9 +140,11 @@ Post.getPostDetail = function(postId, callback){
 }
 
 // 댓글 가져오기
-Post.getReplies = function(postId, callback){
+Post.getReplies = function(endReply, postId, count, callback){
     post.findOne({ _id : postId}, 'reply -_id')
+        .splice('reply', [endReply, count])
         .then((results)=>{
+            results.reply.endReply = endReply+count;
             callback(null, results.reply);
         }, (err)=>{
             callback(err, null);
@@ -160,7 +164,7 @@ Post.recordReply = function(reply, callback){
         console.log('THE RESULT', results);
         reply.profileThumbnail = results.profileThumbnail;
         reply.nickname = results.nickname;
-        post.update({_id : reply.postId}, {$pushAll: {reply : [reply]}}, {upsert : true}, (err, result)=>{
+        post.update({_id : reply.postId}, {$pushAll: {reply : [reply]}, $inc: {replyCount : 1}}, {upsert : true}, (err, result)=>{
             if (err){
                 return callback(err, null); 
             }
