@@ -19,8 +19,8 @@ const postSchema = Schema({
     postContent : String,
     postDate : Date,
     postLikeUsers : [Schema.Types.ObjectId],
+    replyCount : Number,
     reply : [{
-        replyId : Number,  // should be implement as auto increment
         userId : Schema.Types.ObjectId,
         profileThumbnail : String,
         nickname : String,  

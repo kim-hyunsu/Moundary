@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 // mongodb connection, mongoose used
 const url = 'mongodb://52.78.98.25:27017/moundary';
 mongoose.connect(url);
-var db = mongoose.connection;
+// var db = mongoose.connection;
 
 // routers
 const loginRouter = require('./router/loginRouter.js');
@@ -30,7 +30,7 @@ app.listen(3000);
 
 //errorCtrl
 function errorCtrl(err, req, res, next){
-    res.send(err.code);
+    res.sendStatus(err.code);
     console.log('==ERROR MESSAGE========================================');
     console.log(err);
     console.log('==ERROR MESSAGE========================================');

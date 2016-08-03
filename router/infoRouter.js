@@ -7,7 +7,7 @@ router.route('/info')
     .post(writeInfo);
 
 // 정보글 상세페이지, 정보글 수정, 정보글 삭제
-router.route('/post/detail')
+router.route('/info/detail')
     .get(infoDetail)
     .put(modifyInfo)
     .delete(deleteInfo);
@@ -16,7 +16,9 @@ router.route('/post/detail')
 router.put('/post/like', likeInfo);
 
 function infoList(req, res, next){
-
+    var postAdress = req.query;
+    const category = req.query.category;
+    const endPost = req.query.endPost;
 }
 
 function writeInfo(req, res, next){

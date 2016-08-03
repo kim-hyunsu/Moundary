@@ -15,49 +15,60 @@ router.route('/post')
 // 글 상세페이지, 글 수정, 글 삭제
 router.route('/post/detail')
     .get(postDetail)
-    .put(modifyInfo)
-    .delete(deleteInfo);
+    .put(modifyPost)
+    .delete(deletePost);
 
 // 글 좋아요
 router.put('/post/like', likePost);
-
-// 친구 유무 확인
-router.get('/post/friend', checkFriend);
 
 // 내 이야기 목록
 router.get('/post/mine', myPostList);
 
 // newsfeed posts
 function newsList(req, res, next){
-    console.log('get (get) request of /post/detail');
+    console.log('get (get) request of /post');
     const endPost = req.query.endPost;
-    const friend = req.query.friend;
     const userId = req.query.userId;
 
-    var callback = function(err, results){
-        var data;
+    Post.getPosts(endPost, userId, 60, (err, results)=>{
         if(err){
             return next(err);
         }
-        data = {
+        const hasFriend = results.hasFriend;
+        delete results.hasFriend;
+        const data = {
             msg : 'success',
+            hasFriend : hasFriend,
             page : {
                 postCount : results.length,
-                endPost : results[results.length-1].postId
+                endPost : results[0]._id
             },
             data : results
         }
         res.json(data);
-    }
-    // if this user has friends
-    if (friend){
-        console.log('This user has friends');
-        Post.getPosts(endPost, userId, 60, callback);
-    }
-    else{
-        console.log('This user has no friends');
-        Post.getLocalPosts(endPost, userId, 60, callback);
-    }
+    });
+}
+
+
+function myPostList(req, res, next){
+    console.log('get (get) request of /post/mine');
+    const endPost = req.query.endPost;
+    const userId = req.query.userId;
+
+    Post.getMyPosts(endPost, userId, 60, (err, results)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            page : {
+                postCount : results.length,
+                endPost : results[0]._id
+            },
+            data : results
+        }
+        res.json(data);
+    });
 }
 
 function writePost(req, res, next){
@@ -131,29 +142,26 @@ function writePost(req, res, next){
 }
 
 function postDetail(req, res, next){
+    console.log('get (get) request of /post/detail');
     const postId = req.query.postId;
     Post.getPostDetail(postId, (err, results)=>{
         if (err){
             return next(err);
         }
-        const replyInfo = results.reply;
-        delete results.reply;
-        results.replyCount = replyInfo.length;
-        results.replyPage = 10; //상세페이지에서 처음에 보여줄 댓글 갯수
         const data = {
             msg : 'success',
-            postInfo : results,
-            replyInfo : replyInfo
+            postInfo : results
         }
         res.json(data);
     });
 }
 
-function modifyInfo(req, res, next){
+
+function modifyPost(req, res, next){
 
 }
 
-function deleteInfo(req, res, next){
+function deletePost(req, res, next){
 
 }
 
@@ -180,8 +188,5 @@ function checkFriend(req, res, next){
 
 }
 
-function myPostList(req, res, next){
-
-}
 
 module.exports = router;
