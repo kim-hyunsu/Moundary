@@ -56,6 +56,22 @@ User.getBabyAge = function(userId, callback){
     });
 }
 
+User.updateBabyAge = function(userId, orderOfBabyAge, babyAge, callback){
+    user.findOne({_id: userId}, (err, result)=>{
+        if (err){
+            return callback(err, null);
+        } 
+        result.babyAge[orderOfBabyAge-1] = babyAge;
+        result.save((err, results)=>{
+            if (err){
+                return callback(err, null);
+            }
+            result.results = results;
+            callback(null, result) // 넘겨줄거 제대로 정하기
+        });
+    });
+}
+
 // 프로필사진url과 이메일주소 저장 => callback으로 userId 전달
 User.createUser = function(userInfo, callback){
     
@@ -69,6 +85,30 @@ User.updateUser = function(userId, userInfo, callback){
         }
         callback(null, result);
     });
+}
+// 사용자 주변 사용자들 불러오기
+User.getUsersNearby = function(endUser, userId, ageRange, count, callback){ //TODO - ageRange, count 고려하고 결과에 isRequestUser 넣기
+    user.findOne({_id : userId}, 'userAddress -_id', (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        const userAddress = result.userAddress;
+        var query = {};
+        for(var key in userAddress){
+            query['userAddress.'+key] = userAddress[key];
+        }
+        user.find(query, 'profileThumbnail nickname userAddress', (err, results)=>{
+            if (err){
+                return callback(err, null);
+            }
+            callback(null, results);
+        });
+    });
+} 
+
+// 해당 주소에 있는 사용자들 불러오기
+User.getUsersByAddress = function(endUser, postAddress, ageRange, count, callback){
+
 }
 
 module.exports = User;

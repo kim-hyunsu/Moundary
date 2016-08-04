@@ -51,7 +51,7 @@ function modifyProfile(req, res, next){
     const now = new Date();
     const userId = req.query.userId;
     const updateCode = req.body.updateCode;
-    var query;
+    var query = {};
     var data;
     switch(updateCode){
         case 1: // 커버 이미지 수정
@@ -133,15 +133,71 @@ function modifyProfile(req, res, next){
             });
         });
         case 3: // 닉네임 수정
-        
+        query = {
+            nickname = req.body.nickname
+        }
+        User.updateUser(userId, query, (err, result)=>{
+            if (err){
+                return next(err, null);
+            }
+            User.updatePostUserInfo(userId, query, (err, results)=>{
+                if (err){
+                    return next(err, null);
+                }
+                data = {
+                    msg : 'success',
+                    updateCode : updateCode
+                }
+                res.json(data);
+            });
+        });
+        case 4: // 주소수정
+        query = {
+            userAddress = req.body.address
+        }
+        User.updateUser(userId, query, (err, result)=>{
+            if (err){
+                return next(err, null);
+            }
+            data = {
+                msg : 'success',
+                updateCode : updateCode
+            }
+            res.json(data);
+        });
+        case 6: // 아이 생년월일 수정
+        const orderOfBabyAge = req.body.orderOfBabyAge;
+        const babyAge = req.body.babyAge;
+        User.updateBabyAge(userId, orderOfBabyAge, babyAge, (err, result)=>{
+            if (err){
+                return next(err);
+            }
+            data = {
+                msg : 'success',
+                updateCode : updateCode
+            }
+            res.json(data);
+        });
+        case 5: // 아이 추가
+        query['$push'][babyAge] = req.body.addBaby;
+        User.updateUser(userId, query, (err, result)=>{
+            if (err){
+                return next(err);
+            }
+            data = {
+                msg : 'success',
+                updateCode : updateCode
+            }
+            res.json(data);
+        });
     }
 }
 
-function requestFriend(req, res, next){
+function findFriends(req, res, next){
     
 }
 
-function findFriends(req, res, next){
+function requestFriend(req, res, next){
     
 }
 

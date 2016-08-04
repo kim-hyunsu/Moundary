@@ -142,6 +142,9 @@ Post.getPostDetail = function(postId, callback){
 
 // 댓글 가져오기
 Post.getReplies = function(endReply, postId, count, callback){
+    if (!endReply){
+        endReply = 0;
+    }
     post.findOne({ _id : postId}, 'reply -_id')
         .splice('reply', [endReply, count])
         .then((results)=>{
