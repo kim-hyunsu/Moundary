@@ -4,7 +4,6 @@ const formidable = require('formidable');
 
 const fs = require('fs');
 const Post = require('../model/posts.js');
-const User = require('../model/users.js');
 const s3upload = require('./s3upload.js');
 
 // 친구소식 목록, 글 쓰기
@@ -83,7 +82,6 @@ function writePost(req, res, next){
 
     // multipart parsing
     form.parse(req, (err, fields, files)=>{
-        var data;
         if (err){
             return next(err);
         }
@@ -112,6 +110,7 @@ function writePost(req, res, next){
                 postContent : postContent,
                 postDate : now,
                 postLikeUsers : [],
+                replyCount : 0,
                 reply : [] 
             }
             // create a document of the post on the post collection of the db, 'moundary'
@@ -120,21 +119,21 @@ function writePost(req, res, next){
                     return next(err);
                 }
                 console.log('Recorded the post on the db');
+                const data = {
+                    msg: 'success',
+                    postId : postId.toString()
+                }
+                console.log('Final data >>>', data);
+                res.json(data);
+                console.log('RESPONSE COMPLETE');
                 // delete the temporary file in upload folder
                 fs.unlink(postImg.path, (err)=>{
                     if (err){
-                        console.log('Fail to delete a temporary file,', postImg.path);
+                        console.log('Fail to delete a temporary file >>>', postImg.path);
                     }
                     else{
                         console.log('Removed the temporary image of the post');
                     }
-                    data = {
-                        msg: 'success',
-                        postId : postId.toString()
-                    }
-                    console.log('Final data >>>', data);
-                    res.send(data);
-                    console.log('RESPONSE COMPLETE');
                 });
             });
         });
@@ -166,25 +165,6 @@ function deletePost(req, res, next){
 }
 
 function likePost(req, res, next){
-
-}
-
-function checkFriend(req, res, next){
-    Post.getFriendCount((err, results)=>{
-        var data;
-        if (err){
-            data = {
-                msg: 'failure'
-            }
-            res.json(data);
-            return next(err);
-        }
-        data = {
-            msg : 'success',
-            friendCount : results.friendList.length
-        }
-        res.json(data);
-    });
 
 }
 

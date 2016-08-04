@@ -53,10 +53,7 @@ s3upload.thumbnail = function(imagePath, folder, date, userId, callback){
     im.resize({
         srcPath : imagePath,
         dstPath : thumbnail,
-        // TODO-썸네일사이즈 결정하기//
-        
-
-        /////////////////////////////
+        width : 339
     }, (err, stdout, stderr)=>{
         if (err){
             return callback(err, null);

@@ -44,13 +44,14 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
     if(!endPost){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }   
-    user.findOne({_id : userId}, 'postAddress -_id', (err, results)=>{
+    user.findOne({_id : userId}, 'userAddress -_id', (err, results)=>{
         if (err){
             return callback(err, null);
         }
+        const userAddress = results.userAddress;
         var query = {};
-        for(var key in results.postAddress){
-            query["postAddress."+key] = postAddress[key];
+        for(var key in userAddress){
+            query["postAddress."+key] = userAddress[key];
         }
         if (category){
             query.category = category;
@@ -58,6 +59,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         post.find(query, '-reply')
             .where('_id').lt(mongoose.Types.ObjectId(endPost)).limit(count)
             .then((results)=>{
+                results.userAddress = userAddress;
                 callback(null, results);
             }, (err)=>{
                 callback(err, null);
@@ -112,14 +114,13 @@ Post.getMyPosts = function(endPost, userId, count, callback){
 //     postLikeUsers : [],
 //     reply : [] 
 // }
-Post.recordPost = function(diary, callback){
+Post.recordPost = function(APost, callback){
     console.log('Recording the post');
-    diary.userId = mongoose.Types.ObjectId(diary.userId);
-    user.findOne({_id : diary.userId}, 'nickname profileThumbnail', (err, results)=>{
-        diary.nickname = results.nickname;
-        diary.profileThumbnail = results.profileThumbnail;
-        diary.replyCount = 0;
-        post.create(diary, (err, result)=>{
+    APost.userId = mongoose.Types.ObjectId(APost.userId);
+    APost.findOne({_id : APost.userId}, 'nickname profileThumbnail', (err, results)=>{
+        APost.nickname = results.nickname;
+        APost.profileThumbnail = results.profileThumbnail;
+        post.create(APost, (err, result)=>{
             if (err){
                 return callback(err, null);
             }
@@ -171,6 +172,28 @@ Post.recordReply = function(reply, callback){
             console.log('REPLY UPDATE COMPLETE');
             console.log('replyUpload', result);
             callback(null, result);
+        });
+    });
+}
+
+// userId에 해당하는 유저가 쓴 모든 글과 댓글의 userInfo(nickname or profileThumbnail)변경
+Post.updatePostUserInfo = function(userId, userInfo, callback){
+    // 유저가 쓴 모든 post의 profileThumbnail 수정
+    post.update({userId : userId}, userInfo, {upsert: true}, (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        // 유저가 쓴 모든 댓글의 profileThumbnail 수정
+        var query = {}
+        for(var key in userInfo){
+            query['$set']['reply.$.'+key] = userInfo[key];
+        }
+        post.update({'reply.userId' : userId}, query, {upsert :true}, (err,results)=>{
+            if (err){
+                return callback(err, null);
+            }
+            result.results = results
+            callback(null, result); //결과값 제대로 정하기
         });
     });
 }

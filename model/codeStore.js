@@ -39,3 +39,22 @@ Post.getReplies = function(endReply, postId, count, callback){
             callback(err, null);
         });
 }
+
+// 친구 유무 확인 요청에 대한 응답
+function checkFriend(req, res, next){
+    Post.getFriendCount((err, results)=>{
+        var data;
+        if (err){
+            data = {
+                msg: 'failure'
+            }
+            res.json(data);
+            return next(err);
+        }
+        data = {
+            msg : 'success',
+            friendCount : results.friendList.length
+        }
+        res.json(data);
+    });
+}

@@ -2,6 +2,7 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
+const formidable = require('express-formidable');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 
@@ -20,6 +21,11 @@ const userRouter = require('./router/userRouter.js');
 // middleware
 app.use(morgan('dev'));
 app.use(bodyParser.json()); // transmit with json
+app.use(formidable.parse({ // and multipart
+    encoding : 'utf-8',
+    uploadDir : __dirname + '/upload',
+    keepExtensions : true
+})); 
 app.use(loginRouter);
 app.use(newsfeedRouter);
 app.use(infoRouter);
