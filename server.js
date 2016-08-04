@@ -17,8 +17,15 @@ const newsfeedRouter = require('./router/newsfeedRouter.js');
 const infoRouter = require('./router/infoRouter.js');
 const replyRouter = require('./router/replyRouter.js');
 const userRouter = require('./router/userRouter.js');
+const agenda = require('./router/agenda.js');
+
+agenda.on('ready', ()=>{
+    agenda.every('1 hours', 'deleteExpiredPosts');
+    agenda.start();
+});
 
 // middleware
+
 app.use(morgan('dev'));
 app.use(bodyParser.json()); // transmit with json
 app.use(formidable.parse({ // and multipart

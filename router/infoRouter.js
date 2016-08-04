@@ -64,8 +64,11 @@ function infoList(req, res, next){
 
 function writeInfo(req, res, next){
     const now = new Date();
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate()+req.query.due);
     const userId = req.query.userId;
     const post = req.body;
+    post.due = dueDate;
     const postImg = req.body.postImg;
     delete post.postImg;
     s3upload.original(postImg.path, 'postImg', now, userId, (err, imageUrl)=>{

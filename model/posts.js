@@ -198,6 +198,17 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
     });
 }
 
+// 기간 지난 포스트 삭제
+Post.deleteExpiredPosts = function(callback){
+    const now = new Date();
+    post.remove({due: {$lt : now}})
+        .then((result)=>{
+            callback(null, result);
+        }, (err)=>{
+            callback(err, null);
+        });
+}
+
 
 
 module.exports = Post;

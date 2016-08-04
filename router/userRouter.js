@@ -133,7 +133,7 @@ function modifyProfile(req, res, next){
             });
         });
         case 3: // 닉네임 수정
-
+        
     }
 }
 
