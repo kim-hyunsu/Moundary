@@ -148,7 +148,7 @@ Post.getReplies = function(endReply, postId, count, callback){
         endReply = 0;
     }
     post.findOne({ _id : postId}, 'reply -_id')
-        .splice('reply', [endReply, count])
+        .slice('reply', [endReply, count])
         .then((results)=>{
             results.reply.endReply = endReply+count;
             callback(null, results.reply);
