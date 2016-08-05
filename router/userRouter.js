@@ -134,7 +134,7 @@ function modifyProfile(req, res, next){
         });
         case 3: // 닉네임 수정
         query = {
-            nickname = req.body.nickname
+            nickname : req.body.nickname
         }
         User.updateUser(userId, query, (err, result)=>{
             if (err){
@@ -153,7 +153,7 @@ function modifyProfile(req, res, next){
         });
         case 4: // 주소수정
         query = {
-            userAddress = req.body.address
+            userAddress : req.body.address
         }
         User.updateUser(userId, query, (err, result)=>{
             if (err){
@@ -166,9 +166,13 @@ function modifyProfile(req, res, next){
             res.json(data);
         });
         case 6: // 아이 생년월일 수정
-        const orderOfBabyAge = req.body.orderOfBabyAge;
-        const babyAge = req.body.babyAge;
-        User.updateBabyAge(userId, orderOfBabyAge, babyAge, (err, result)=>{
+        const babyId = req.body.babyId;
+        const age = req.body.babyAge;
+        var babyAge = new Date();
+        babyAge.setFullYear(parseInt(age.substring(0,4)));
+        babyAge.setMonth(parseInt(age.substring(5,6))-1);
+        babyAge.setDate(parseInt(age.substring(7,8)));
+        User.updateBabyAge(userId, babyId, babyAge, (err, result)=>{
             if (err){
                 return next(err);
             }
@@ -179,7 +183,9 @@ function modifyProfile(req, res, next){
             res.json(data);
         });
         case 5: // 아이 추가
-        query['$push'][babyAge] = req.body.addBaby;
+        query['$push']['baby'] = {
+            babyAge : req.body.addBaby
+        }
         User.updateUser(userId, query, (err, result)=>{
             if (err){
                 return next(err);
@@ -194,7 +200,8 @@ function modifyProfile(req, res, next){
 }
 
 function findFriends(req, res, next){
-    
+    const userId = req.query.userId;
+
 }
 
 function requestFriend(req, res, next){

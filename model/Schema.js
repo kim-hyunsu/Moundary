@@ -56,7 +56,9 @@ const userSchema = Schema({
         share : Boolean
     },
     friendList : [Schema.Types.ObjectId],
-    babyAge : [Number],
+    baby : [{
+        babyAge: Date
+    }],
     alram : {
         moundaryAlarm : Boolean,
         replyAlarm : Boolean,

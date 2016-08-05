@@ -28,12 +28,16 @@ function signup(req, res, next){
         console.log('parsed the multipart request');
         const coverImg = files.coverImg;
         const profileImg = files.profileImg;
-
+        var age = fields.babyAge;
+        var babyAge = new Date();
+        babyAge.setFullYear(parseInt(age.substring(0,4)));
+        babyAge.setMonth(parseInt(age.substring(5,6))-1);
+        babyAge.setDate(parseInt(age.substring(7,8)));
         var record = function(err, profileImageUrl, profileThumbnailUrl, coverImageUrl){
             if (err){
                 return next(err);
             }
-            var data = {
+            var query = {
                 policyAgreeDate : fields.policyAgreeDate,
                 personalInfoAgreeDate : fields.personalInfoAgreeDate,
                 nickname : fields.nickname,
@@ -47,10 +51,12 @@ function signup(req, res, next){
                     area4 : fields.area4,
                     area5 : fields.area5
                 },
-                babyAge : [fields.babyAge],
+                baby : [{
+                    babyAge: babyAge
+                }],
 
             }
-            User.updateUser(userId, data, (err, userId)=>{
+            User.updateUser(userId, query, (err, userId)=>{
                 if (err){
                     return next(err);
                 }
@@ -82,9 +88,9 @@ function signup(req, res, next){
 }
 
 // In process of the external authentication,
-// get user's profile image and email address from the token.
+// we get user's profile image and email address from the token.
 // Since the profile image is an url,
-// use a http client module to request to get image data corresponding to the url.
+// we should use a http client module to request to get image data corresponding to the url.
 // Consequently, we can create a image file using a fs module.
 // Finally, we can make a thumbnail image from the file.
 function registerUser(token, callback){

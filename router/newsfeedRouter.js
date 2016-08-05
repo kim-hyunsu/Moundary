@@ -116,7 +116,15 @@ function writePost(req, res, next){
             // create a document of the post on the post collection of the db, 'moundary'
             Post.recordPost(diary, (err, postId)=>{
                 if (err){
-                    return next(err);
+                    fs.unlink(postImg.path, (err)=>{
+                        if (err){
+                            console.log('fail to delete the empty image');
+                        }
+                        else{
+                            console.log('Deleted a empty image');
+                        }
+                        return next(err);   
+                    });
                 }
                 console.log('Recorded the post on the db');
                 const data = {

@@ -64,7 +64,7 @@ function infoList(req, res, next){
 
 function writeInfo(req, res, next){
     const now = new Date();
-    const dueDate = new Date();
+    var dueDate = new Date();
     dueDate.setDate(dueDate.getDate()+req.query.due);
     const userId = req.query.userId;
     const post = req.body;

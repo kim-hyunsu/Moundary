@@ -1,3 +1,4 @@
+const async = require('async');
 const mongoose = require('mongoose');
 // const url = 'mongodb://52.78.98.25:27017/moundary';
 // mongoose.connect(url);
@@ -56,20 +57,15 @@ User.getBabyAge = function(userId, callback){
     });
 }
 
-User.updateBabyAge = function(userId, orderOfBabyAge, babyAge, callback){
-    user.findOne({_id: userId}, (err, result)=>{
+// 아이 나이 수정
+User.updateBabyAge = function(userId, babyId, babyAge, callback){
+    user.update({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, (err, result)=>{
         if (err){
             return callback(err, null);
-        } 
-        result.babyAge[orderOfBabyAge-1] = babyAge;
-        result.save((err, results)=>{
-            if (err){
-                return callback(err, null);
-            }
-            result.results = results;
-            callback(null, result) // 넘겨줄거 제대로 정하기
-        });
+        }
+        callback(null, result);
     });
+    // 넘겨줄거 제대로 정하기
 }
 
 // 프로필사진url과 이메일주소 저장 => callback으로 userId 전달
@@ -86,29 +82,79 @@ User.updateUser = function(userId, userInfo, callback){
         callback(null, result);
     });
 }
+
+// ageRange 코드 값에 따라 알맞은 생년월일 범위 반환
+function ageRangeSwitch(ageRange){
+    var min = new Date();
+    var max = new Date();
+    switch(ageRange){
+        case 1: // 0에서 3개월
+        min.setMonth(min.getMonth()-4);
+        case 2: // 4에서 12개월
+        max.setMonth(max.getMonth()-4);
+        min.setMonth(min.getMonth()-12);
+        case 3: // 2에서 4세
+        max.setMonth(max.getMonth()-12);
+        min = new Date(min.getFullYear()-3, 0, 0, 0, 0, 0, 0);
+        case 4: // 5에서 7세
+        max = new Date(max.getFullYear()-3, 0, 0, 0, 0, 0, 0);
+        min = new Date(min.getFullYear()-6, 0, 0, 0, 0, 0, 0);
+        case 5: // 7세 이상
+        max = new Date(max.getFullYear()-6, 0, 0, 0, 0, 0, 0);
+        min = new Date(min.getFullYear()-19, 0, 0, 0, 0, 0, 0);
+        default: // no ageRange input
+        min = new Date(min.getFullYear()-19, 0, 0, 0, 0, 0, 0);
+    }
+    return min, max;
+}
+
+// 해당 주소에 있는 사용자들 불러오기
+User.getUsersByAddress = function(endUser, userAddress, ageRange, count, callback){
+    var min, max = ageRangeSwitch(ageRange);
+    var query = {};
+    for(var key in userAddress){
+        query['userAddress.'+key] = userAddress[key];
+    }
+    user.find(query, 'profileThumbnail nickname userAddress babyAge')
+        .where('baby.$.babyAge').gte(min).lte(max)
+        .limit(count)
+        .then( (results)=>{
+            async.each(results, (ele, cb)=>{
+                holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
+                    if (count == 0){
+                        ele.isRequestUser = false;
+                    }
+                    else{
+                        ele.isRequestUser = true;
+                    }
+                    cb()
+                });
+            }, (err)=>{
+                if (err){
+                    return callback(err, null);
+                }
+                callback(null, results);
+            });
+        }, (err)=>{
+            callback(err, null);
+        });
+}
+
 // 사용자 주변 사용자들 불러오기
 User.getUsersNearby = function(endUser, userId, ageRange, count, callback){ //TODO - ageRange, count 고려하고 결과에 isRequestUser 넣기
-    user.findOne({_id : userId}, 'userAddress -_id', (err, result)=>{
+    user.findOne({_id : userId}, 'userAddress babyAge -_id', (err, result)=>{
         if (err){
             return callback(err, null);
         }
         const userAddress = result.userAddress;
-        var query = {};
-        for(var key in userAddress){
-            query['userAddress.'+key] = userAddress[key];
-        }
-        user.find(query, 'profileThumbnail nickname userAddress', (err, results)=>{
+        delete userAddress.area5;  //상세지역은 빼도 '동'까지만 검색
+        User.getUsersByAddress(endUser, userAddress, ageRange, count, (err, results)=>{
             if (err){
                 return callback(err, null);
             }
-            callback(null, results);
+            callback(null, results)
         });
     });
-} 
-
-// 해당 주소에 있는 사용자들 불러오기
-User.getUsersByAddress = function(endUser, postAddress, ageRange, count, callback){
-
 }
 
 module.exports = User;

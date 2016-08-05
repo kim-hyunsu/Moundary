@@ -116,8 +116,10 @@ Post.getMyPosts = function(endPost, userId, count, callback){
 // }
 Post.recordPost = function(APost, callback){
     console.log('Recording the post');
-    APost.userId = mongoose.Types.ObjectId(APost.userId);
-    APost.findOne({_id : APost.userId}, 'nickname profileThumbnail', (err, results)=>{
+    user.findOne({_id : APost.userId}, 'nickname profileThumbnail', (err, results)=>{
+        if (err){
+            return callback(err, null);
+        }
         APost.nickname = results.nickname;
         APost.profileThumbnail = results.profileThumbnail;
         post.create(APost, (err, result)=>{
