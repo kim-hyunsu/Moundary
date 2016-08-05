@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const formidable = require('formidable');
 
 const User = require('../model/users.js');
 
@@ -15,76 +14,65 @@ router.post('/auth/kakao', kakaoLogin);
 function signup(req, res, next){
     const now = new Date();
     const userId = req.query.userId;
-    var form = new formidable.IncomingForm();
-    form.encoding = 'utf-8';
-    form.keepExtensions = true;
-    form.uploadDir = __dirname + '/../upload';
-
-    form.parse(req, (err, fields, files)=>{
-        var data;
+    console.log('parsed the multipart request');
+    const coverImg = req.body.coverImg;
+    const profileImg = req.body.profileImg;
+    var age = fields.babyAge;
+    var babyAge = new Date();
+    babyAge.setFullYear(parseInt(age.substring(0,4)));
+    babyAge.setMonth(parseInt(age.substring(5,6))-1);
+    babyAge.setDate(parseInt(age.substring(7,8)));
+    var record = function(err, profileImageUrl, profileThumbnailUrl, coverImageUrl){
         if (err){
             return next(err);
         }
-        console.log('parsed the multipart request');
-        const coverImg = files.coverImg;
-        const profileImg = files.profileImg;
-        var age = fields.babyAge;
-        var babyAge = new Date();
-        babyAge.setFullYear(parseInt(age.substring(0,4)));
-        babyAge.setMonth(parseInt(age.substring(5,6))-1);
-        babyAge.setDate(parseInt(age.substring(7,8)));
-        var record = function(err, profileImageUrl, profileThumbnailUrl, coverImageUrl){
-            if (err){
-                return next(err);
-            }
-            var query = {
-                policyAgreeDate : fields.policyAgreeDate,
-                personalInfoAgreeDate : fields.personalInfoAgreeDate,
-                nickname : fields.nickname,
-                profilImg : profileImageUrl,
-                profileThumbnail : profileThumbnailUrl,
-                coverImg : coverImageUrl,
-                userAddress : {
-                    area1 : fields.area1,
-                    area2 : fields.area2,
-                    area3 : fields.area3,
-                    area4 : fields.area4,
-                    area5 : fields.area5
-                },
-                baby : [{
-                    babyAge: babyAge
-                }],
+        var query = {
+            policyAgreeDate : fields.policyAgreeDate,
+            personalInfoAgreeDate : fields.personalInfoAgreeDate,
+            nickname : fields.nickname,
+            profilImg : profileImageUrl,
+            profileThumbnail : profileThumbnailUrl,
+            coverImg : coverImageUrl,
+            userAddress : {
+                area1 : fields.area1,
+                area2 : fields.area2,
+                area3 : fields.area3,
+                area4 : fields.area4,
+                area5 : fields.area5
+            },
+            baby : [{
+                babyAge: babyAge
+            }],
 
-            }
-            User.updateUser(userId, query, (err, userId)=>{
-                if (err){
-                    return next(err);
-                }
-                const data ={
-                    msg : 'success',
-                    userId : userId
-                }
-                res.json(data);
-            });
         }
-        s3upload.original(profileImg.path, 'profileImg', now, userId, (err, profileImageUrl)=>{
+        User.updateUser(userId, query, (err, userId)=>{
             if (err){
                 return next(err);
             }
-            s3upload.thumbnail(profileImg.path, 'profileThumbnail', now, userId, (err, profileThumbnailUrl)=>{
+            const data ={
+                msg : 'success',
+                userId : userId
+            }
+            res.json(data);
+        });
+    }
+    s3upload.original(profileImg.path, profileImg.type, 'profileImg', now, userId, (err, profileImageUrl)=>{
+        if (err){
+            return next(err);
+        }
+        s3upload.thumbnail(profileImg.path, profileImg.type, 'profileThumbnail', now, userId, (err, profileThumbnailUrl)=>{
+            if (err){
+                return next(err);
+            }
+            s3upload.original(coverImg.path, coverImg.type, 'coverImg', now, userId, (err, coverImageUrl)=>{
                 if (err){
                     return next(err);
                 }
-                s3upload.original(coverImg.path, 'coverImg', now, userId, (err, coverImageUrl)=>{
-                    if (err){
-                        return next(err);
-                    }
-                    record(null, profileImageUrl, profileThumbnailUrl, coverImageUrl);
-                    // TODO- delete temporary file 
-                });
+                record(null, profileImageUrl, profileThumbnailUrl, coverImageUrl);
+                // TODO- delete temporary file 
             });
-        });     
-    });
+        });
+    });     
 }
 
 // In process of the external authentication,

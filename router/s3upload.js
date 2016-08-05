@@ -15,7 +15,7 @@ const bucketName = 'moundary';
 // folder : postImg, postThumbnail, profileImg, profileThumbnail, coverImg
 
 // 원본 이미지 업로드 => callback(err, imageUrl)
-s3upload.original = function(imagePath, folder, date, userId, callback){
+s3upload.original = function(imagePath, imageType, folder, date, userId, callback){
     const extname = pathUtil.extname(imagePath);
     if (extname.length == 0){
         console.log('No input image');
@@ -30,7 +30,7 @@ s3upload.original = function(imagePath, folder, date, userId, callback){
         Key : itemKey,
         ACL : 'public-read',
         Body : readStream,
-        ContentType : readStream.ContentType
+        ContentType : imageType
     }
     s3.putObject(params, (err, data)=>{
         if (err){
@@ -43,7 +43,7 @@ s3upload.original = function(imagePath, folder, date, userId, callback){
 }
 
 //썸네일 이미지 변환 후 썸네일 업로드 => callback(err, imageUrl)
-s3upload.thumbnail = function(imagePath, folder, date, userId, callback){
+s3upload.thumbnail = function(imagePath, imageType, folder, date, userId, callback){
     const extname = pathUtil.extname(imagePath);
     if (extname.length == 0){
         return callback(null, null);
@@ -64,7 +64,8 @@ s3upload.thumbnail = function(imagePath, folder, date, userId, callback){
             Bucket : bucketName,
             Key : itemKey,
             ACL : 'public-read',
-            Body : stdout
+            Body : stdout,
+            ContentType : imageType
         }
         s3.putObject(params, (err, data)=>{
             if (err){

@@ -56,7 +56,7 @@ function modifyProfile(req, res, next){
     switch(updateCode){
         case 1: // 커버 이미지 수정
         const coverImg = req.body.coverImg;
-        s3upload.original(coverImg.path, 'coverImg', now, userId, (err, imageUrl)=>{
+        s3upload.original(coverImg.path, coverImg.type, 'coverImg', now, userId, (err, imageUrl)=>{
             if (err){
                 return next(err);
             }
@@ -78,12 +78,12 @@ function modifyProfile(req, res, next){
         const profileImg = req.body.profileImg;
         const profilePath = profileImg.path;
         // s3에 원본 이미지 업로드
-        s3upload.original(profilePath, 'profileImg', now, userId, (err, imageUrl)=>{
+        s3upload.original(profilePath, profileImg.type, 'profileImg', now, userId, (err, imageUrl)=>{
             if (err){
                 return next(err);
             }
             // 썸네일 이미지 변환후 s3에 이미지 업로드
-            s3upload.thumbnail(profilePath, 'profileThumbnail', now, userId, (err, thumbnailUrl)=>{
+            s3upload.thumbnail(profilePath, profileImg.type, 'profileThumbnail', now, userId, (err, thumbnailUrl)=>{
                 if (err){
                     return next(err);
                 }

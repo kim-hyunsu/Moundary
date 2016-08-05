@@ -1,7 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const formidable = require('formidable');
-
 const fs = require('fs');
 const Post = require('../model/posts.js');
 const s3upload = require('./s3upload.js');
@@ -75,21 +73,37 @@ function writePost(req, res, next){
     const now = new Date();
     // bring the userId from the session
     const userId = req.query.userId;
-    var form = new formidable.IncomingForm();
-    form.encoding = 'utf-8';
-    form.keepExtensions = true;  // save with extension
-    form.uploadDir = __dirname + '/../upload'; // saved a temporary image file automatically in upload folder
-
-    // multipart parsing
-    form.parse(req, (err, fields, files)=>{
+    console.log('parsed the multipart request');
+    const postContent = req.body.postContent;
+    var postImg = req.body.postImg;
+    // upload the original image to s3
+    console.log('POSTiMG',postImg);
+    s3upload.original(postImg.path, postImg.type, 'postImg', now, userId, (err, imageUrl)=>{
         if (err){
-            return next(err);
+            fs.unlink(postImg.path, (err)=>{
+                if (err){
+                    console.log('fail to delete the empty image');
+                }
+                else{
+                    console.log('Deleted a empty image');
+                }
+                return next(err);   
+            });
         }
-        console.log('parsed the multipart request');
-        const postContent = fields.postContent;
-        var postImg = files.postImg;
-        // upload the original image to s3
-        s3upload.original(postImg.path, 'postImg', now, userId, (err, imageUrl)=>{
+        console.log('Uploaded the post image');
+        // post infomations
+        const diary = {
+            category : 0, //diary
+            userId : userId,
+            postImg : imageUrl,
+            postContent : postContent,
+            postDate : now,
+            postLikeUsers : [],
+            replyCount : 0,
+            reply : [] 
+        }
+        // create a document of the post on the post collection of the db, 'moundary'
+        Post.recordPost(diary, (err, postId)=>{
             if (err){
                 fs.unlink(postImg.path, (err)=>{
                     if (err){
@@ -101,48 +115,22 @@ function writePost(req, res, next){
                     return next(err);   
                 });
             }
-            console.log('Uploaded the post image');
-            // post infomations
-            const diary = {
-                category : 0, //diary
-                userId : userId,
-                postImg : imageUrl,
-                postContent : postContent,
-                postDate : now,
-                postLikeUsers : [],
-                replyCount : 0,
-                reply : [] 
+            console.log('Recorded the post on the db');
+            const data = {
+                msg: 'success',
+                postId : postId.toString()
             }
-            // create a document of the post on the post collection of the db, 'moundary'
-            Post.recordPost(diary, (err, postId)=>{
+            console.log('Final data >>>', data);
+            res.json(data);
+            console.log('RESPONSE COMPLETE');
+            // delete the temporary file in upload folder
+            fs.unlink(postImg.path, (err)=>{
                 if (err){
-                    fs.unlink(postImg.path, (err)=>{
-                        if (err){
-                            console.log('fail to delete the empty image');
-                        }
-                        else{
-                            console.log('Deleted a empty image');
-                        }
-                        return next(err);   
-                    });
+                    console.log('Fail to delete a temporary file >>>', postImg.path);
                 }
-                console.log('Recorded the post on the db');
-                const data = {
-                    msg: 'success',
-                    postId : postId.toString()
+                else{
+                    console.log('Removed the temporary image of the post');
                 }
-                console.log('Final data >>>', data);
-                res.json(data);
-                console.log('RESPONSE COMPLETE');
-                // delete the temporary file in upload folder
-                fs.unlink(postImg.path, (err)=>{
-                    if (err){
-                        console.log('Fail to delete a temporary file >>>', postImg.path);
-                    }
-                    else{
-                        console.log('Removed the temporary image of the post');
-                    }
-                });
             });
         });
     });

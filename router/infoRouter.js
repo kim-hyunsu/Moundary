@@ -71,7 +71,7 @@ function writeInfo(req, res, next){
     post.due = dueDate;
     const postImg = req.body.postImg;
     delete post.postImg;
-    s3upload.original(postImg.path, 'postImg', now, userId, (err, imageUrl)=>{
+    s3upload.original(postImg.path, postImg.type, 'postImg', now, userId, (err, imageUrl)=>{
         if(err){
             fs.unlink(postImg.path, (err)=>{
                 if (err){
@@ -84,7 +84,7 @@ function writeInfo(req, res, next){
             });
         }
         post.postImg = imageUrl;
-        s3upload.thumbnail(postImg.path, 'postThumbnail', now, userId, (err, imageUrl)=>{
+        s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', now, userId, (err, imageUrl)=>{
             if(err){
                 const thumbnailPath = __dirname+'/../upload' + 'thumbnail_'+pathUtil.basename(image.path)
                 fs.unlink(thumbnailPath, (err)=>{
