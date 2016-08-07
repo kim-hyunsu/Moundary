@@ -49,21 +49,19 @@ const userSchema = Schema({
         area5 : String
     },
     joinPath : Number,
-    interest : {
-        sale : Boolean,
-        store : Boolean,
-        event : Boolean,
-        share : Boolean
-    },
     friendList : [Schema.Types.ObjectId],
     baby : [{
         babyAge: Date
     }],
     alram : {
-        moundaryAlarm : Boolean,
-        replyAlarm : Boolean,
-        likeAlarm : Boolean,
-        alarmVibration : Boolean
+        mode : Number,
+        sale : Boolean,
+        store : Boolean,
+        event : Boolean,
+        share : Boolean,
+        moundary : Boolean,
+        reply : Boolean,
+        like : Boolean
     }
 });
 

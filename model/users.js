@@ -115,7 +115,7 @@ User.getUsersByAddress = function(endUser, userAddress, ageRange, count, callbac
     for(var key in userAddress){
         query['userAddress.'+key] = userAddress[key];
     }
-    user.find(query, 'profileThumbnail nickname userAddress babyAge')
+    user.find(query, 'profileThumbnail nickname userAddress baby')
         .where('baby.$.babyAge').gte(min).lte(max)
         .limit(count)
         .then( (results)=>{
