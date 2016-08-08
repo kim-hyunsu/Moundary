@@ -34,7 +34,7 @@ function replyList(req, res, next){
     });
 }
 
-function writeReply(req, res, next){  
+function writeReply(req, res, next){
     console.log("Let's start to write a reply");
     const now = new Date();  
     const reply = req.body;

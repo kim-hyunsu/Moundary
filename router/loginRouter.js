@@ -3,7 +3,7 @@ const router = express.Router();
 
 const User = require('../model/users.js');
 
-router.put('/auth/signup',signup);
+router.post('/auth/signup',signup);
 
 router.post('/auth/facebook', FBLogin);
 

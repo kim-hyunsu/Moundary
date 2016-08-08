@@ -3,21 +3,29 @@ const router = express.Router();
 const User = require('../model/users.js');
 const Post = require('../model/posts.js');
 const s3upload = require('./s3upload.js');
-// 프로필 페이지
-router.get('/user', profile);
-
-// 친구 신청/취소/수락/거절
-router.put('/user/:request', requestFriend)
-
-// 프로필 수정 페이지, 프로필 수정
-router.route('/user/update')
-    .get(profileUpdatePage)
+// 프로필 페이지, 프로필 수정
+router.route('/user')
+    .get(profile)
     .put(modifyProfile);
 
-// 친구 찾기, 친구 삭제
-router.route('/user/friends')
-    .get(findFriends)
-    .delete(deleteFriend);
+//아기 생년월일 가져오기
+router.get('/user/baby', getBabyInfo);
+
+// 근처 유저 목록 가져오기
+router.get('/user/list', userList);
+
+// 유저 검색
+router.get('/user/search', searchUsers);
+
+// 친구 목록 가져오기
+router.get('/friend', friendList);
+
+// 친구 신청 목록 가져오기
+router.get('/friend/candidate', frinedCandidates)
+
+// 친구 신청/취소/수락/거절
+router.put('/friend/:request', requestFriend)
+
 
 function profile(req, res, next){
     const profileUserId = req.query.profileUserId;  //session에서 긁지 않고 요청으로 받는다.
@@ -34,7 +42,7 @@ function profile(req, res, next){
     });
 }
 
-function profileUpdatePage(req, res, next){
+function getBabyInfo(req, res, next){
     const userId = req.query.userId;
     User.getBabyAge(userId, (err,result)=>{
         if (err){
@@ -199,7 +207,7 @@ function modifyProfile(req, res, next){
     }
 }
 
-function findFriends(req, res, next){
+function userList(req, res, next){
     const userId = req.query.userId;
 
 }
@@ -208,8 +216,5 @@ function requestFriend(req, res, next){
     
 }
 
-function deleteFriend(req, res, next){
-    
-}
 
 module.exports = router;

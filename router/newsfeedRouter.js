@@ -4,22 +4,22 @@ const fs = require('fs');
 const Post = require('../model/posts.js');
 const s3upload = require('./s3upload.js');
 
-// 친구소식 목록, 글 쓰기
+// 친구소식 목록, 글 쓰기, 수정, 삭제
 router.route('/post')
     .get(newsList)
-    .post(writePost);
+    .post(writePost)
+    .put(modifyPost)
+    .delete(deletePost)
 
-// 글 상세페이지, 글 수정, 글 삭제
+// 글 상세페이지 => 보류
 router.route('/post/detail')
     .get(postDetail)
-    .put(modifyPost)
-    .delete(deletePost);
-
-// 글 좋아요
-router.put('/post/like', likePost);
 
 // 내 이야기 목록
 router.get('/post/mine', myPostList);
+
+// 글 좋아요
+router.put('/post/like', likePost);
 
 // newsfeed posts
 function newsList(req, res, next){
@@ -160,6 +160,7 @@ function deletePost(req, res, next){
 
 }
 
+// 좋아요 한 번밖에 못 누르게 하기(게시물 당)
 function likePost(req, res, next){
 
 }
