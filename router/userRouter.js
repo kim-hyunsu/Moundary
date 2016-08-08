@@ -21,11 +21,22 @@ router.get('/user/search', searchUsers);
 router.get('/friend', friendList);
 
 // 친구 신청 목록 가져오기
-router.get('/friend/candidate', frinedCandidates)
+router.get('/friend/candidate', friendCandidates)
 
 // 친구 신청/취소/수락/거절
 router.put('/friend/:request', requestFriend)
 
+function searchUsers(req, res, next){
+
+}
+
+function friendCandidates(req, res, next){
+
+}
+
+function friendList(req, res, next){
+    
+}
 
 function profile(req, res, next){
     const profileUserId = req.query.profileUserId;  //session에서 긁지 않고 요청으로 받는다.
