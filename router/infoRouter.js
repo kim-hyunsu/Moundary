@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Post = require('../model/posts.js');
+const s3upload = require('./s3upload.js');
+const pathUtil = require('path');
+const fs = require('fs');
 
 // 동네소식 목록, 정보글 쓰기, 수정, 삭제
 router.route('/info')
@@ -63,14 +66,27 @@ function infoList(req, res, next){
 }
 
 function writeInfo(req, res, next){
+    console.log('get (post) request of /info');
     const now = new Date();
     var dueDate = new Date();
-    dueDate.setDate(dueDate.getDate()+req.query.due);
+    dueDate.setDate(dueDate.getDate()+req.body.due);
     const userId = req.query.userId;
-    const post = req.body;
-    post.due = dueDate;
-    const postImg = req.body.postImg;
-    delete post.postImg;
+    const body = req.body;
+    const postAddress = {
+        area1 : body.area1,
+        area2 : body.area2,
+        area3 : body.area3,
+        area4 : body.area4,
+        area5 : body.area5
+    };
+    var post = {
+        userId : userId,
+        category : body.category,
+        due : dueDate,
+        postContent : body.postContent,
+        postAddress : postAddress
+    };
+    const postImg = body.postImg;
     s3upload.original(postImg.path, postImg.type, 'postImg', now, userId, (err, imageUrl)=>{
         if(err){
             fs.unlink(postImg.path, (err)=>{
@@ -82,21 +98,16 @@ function writeInfo(req, res, next){
                 }
                 return next(err);
             });
+            return;
         }
+        console.log('s3 uploaded the original image');
         post.postImg = imageUrl;
         s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', now, userId, (err, imageUrl)=>{
+            // const thumbnailPath = __dirname+'/../upload/' + 'thumbnail_'+pathUtil.basename(postImg.path);
             if(err){
-                const thumbnailPath = __dirname+'/../upload' + 'thumbnail_'+pathUtil.basename(image.path)
-                fs.unlink(thumbnailPath, (err)=>{
-                    if (err){
-                        console.log('fail to delete the empty image >>>', thumbnailPath);
-                    }
-                    else{
-                        console.log('Deleted a empty image');
-                    }
-                    return next(err);
-                });
+                return next(err);
             }
+            console.log('s3 uploaded the thumbnail image');
             post.postThumbnail = imageUrl;
             post.userId = post.userId;
             post.postDate = now;
@@ -107,6 +118,7 @@ function writeInfo(req, res, next){
                 if (err){
                     return next(err);
                 }
+                console.log('The info post recorded in the db');
                 fs.unlink(postImg.path, (err)=>{
                     if (err){
                         console.log('Fail to delete a temporary file >>>', postImg.path)
@@ -114,20 +126,12 @@ function writeInfo(req, res, next){
                     else{
                         console.log('Removed the temporary image of the post');
                     }
-                    fs.unlink(thumbnailPath, (err)=>{
-                        if (err){
-                            console.log('Fail to delete a temporary thumbnail file >>>', thumbnailPath);
-                        }
-                        else{
-                            console.log('Removed the temporary thumbnail image of the post')
-                        }
-                        const data = {
-                            msg : 'success',
-                            postId : postId.toString()
-                        }
-                        res.json(data);
-                    })
-                })
+                    const data = {
+                        msg : 'success',
+                        postId : postId
+                    }
+                    res.json(data);
+                });
             });
         });
     });

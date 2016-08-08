@@ -5,7 +5,7 @@ AWS.config.region = 'ap-northeast-2';
 AWS.config.accessKeyId = config.accessKeyId;
 AWS.config.secretAccessKey = config.secretAccessKey;
 var s3 = new AWS.S3();
-const im = require('imagemagick');
+const thumb = require('imagemagick');
 const pathUtil = require('path');
  
 
@@ -48,23 +48,25 @@ s3upload.thumbnail = function(imagePath, imageType, folder, date, userId, callba
     if (extname.length == 0){
         return callback(null, null);
     }
-    const thumbnail = __dirname+'/../upload' + 'thumbnail_'+pathUtil.basename(imagePath);
-
+    const thumbnail = __dirname+"/../upload/thumb_" +pathUtil.basename(imagePath);
+    console.log('Check Thumbnail Path >>>', thumbnail);
     im.resize({
         srcPath : imagePath,
         dstPath : thumbnail,
         width : 339
-    }, (err, stdout, stderr)=>{
+    }, (err)=>{
         if (err){
             return callback(err, null);
         }
+        console.log('The image resized');
+        var readStream = fs.createReadStream(thumbnail);
         const itemKey = folder+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
                     +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
         const params = {
             Bucket : bucketName,
             Key : itemKey,
             ACL : 'public-read',
-            Body : stdout,
+            Body : readStream,
             ContentType : imageType
         }
         s3.putObject(params, (err, data)=>{
@@ -72,6 +74,7 @@ s3upload.thumbnail = function(imagePath, imageType, folder, date, userId, callba
                 return callback(err, null);
             }
             const path = 'http://' + s3.endpoint.host + '/' + bucketName + '/'+ itemKey;
+            console.log('The thumbnail uploading complete >>>', path);
             callback(null, path);
         });
     });
