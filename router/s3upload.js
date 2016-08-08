@@ -5,7 +5,7 @@ AWS.config.region = 'ap-northeast-2';
 AWS.config.accessKeyId = config.accessKeyId;
 AWS.config.secretAccessKey = config.secretAccessKey;
 var s3 = new AWS.S3();
-const thumb = require('imagemagick');
+const im = require('imagemagick');
 const pathUtil = require('path');
  
 
