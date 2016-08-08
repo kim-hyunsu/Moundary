@@ -56,7 +56,16 @@ s3upload.thumbnail = function(imagePath, imageType, folder, date, userId, callba
         width : 339
     }, (err)=>{
         if (err){
-            return callback(err, null);
+            fs.unlink(thumbnail, (err)=>{
+                if (err){
+                    console.log('Fail to delete a temporary thumbnail file >>>', thumbnail);
+                }
+                else{
+                    console.log('Removed the temporary thumbanil file');
+                }
+                return callback(err, null);
+            });
+
         }
         console.log('The image resized');
         var readStream = fs.createReadStream(thumbnail);

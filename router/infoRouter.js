@@ -24,12 +24,12 @@ function infoList(req, res, next){
     const category = postAddress.category;
     const endPost = postAddress.endPost;
     const userId = req.query.userId;
-    delete postAdress.category;
+    delete postAddress.category;
     delete postAddress.endPost;
     delete postAddress.userId;
 
     if (Object.keys(postAddress).length == 0){
-        Post.getInfoPostsNearby(endPost, userId, category, count, (err, results)=>{
+        Post.getInfoPostsNearby(endPost, userId, category, 60, (err, results)=>{
             if (err){
                 return next(err);
             }
@@ -48,7 +48,7 @@ function infoList(req, res, next){
         });
     }
     else{
-        Post.getInfoPostsByAddress(endPost, postAddress, category, count, (err, results)=>{
+        Post.getInfoPostsByAddress(endPost, postAddress, category, 60, (err, results)=>{
             if (err){
                 return next(err);
             }
@@ -98,12 +98,11 @@ function writeInfo(req, res, next){
                 }
                 return next(err);
             });
-            return;
         }
         console.log('s3 uploaded the original image');
         post.postImg = imageUrl;
         s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', now, userId, (err, imageUrl)=>{
-            // const thumbnailPath = __dirname+'/../upload/' + 'thumbnail_'+pathUtil.basename(postImg.path);
+            const thumbnailPath = __dirname+'/../upload/' + 'thumbnail_'+pathUtil.basename(postImg.path);
             if(err){
                 return next(err);
             }
@@ -126,12 +125,20 @@ function writeInfo(req, res, next){
                     else{
                         console.log('Removed the temporary image of the post');
                     }
-                    const data = {
-                        msg : 'success',
-                        postId : postId
-                    }
-                    res.json(data);
-                });
+                    fs.unlink(thumbnailPath, (err)=>{
+                        if (err){
+                            console.log('Fail to delete a temporary thumbnail file >>>', thumbnailPath);
+                        }
+                        else{
+                            console.log('Removed the temporary thumbnail image of the post')
+                        }
+                        const data = {
+                            msg : 'success',
+                            postId : postId
+                        }
+                        res.json(data);
+                    })
+                })
             });
         });
     });

@@ -56,8 +56,11 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         if (category){
             query.category = category;
         }
-        post.find(query, '-reply')
-            .where('_id').lt(mongoose.Types.ObjectId(endPost)).limit(count)
+        var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
+        if (!category){
+            promise = promise.where('category').ne(0);
+        }
+        promise.limit(count)
             .then((results)=>{
                 results.userAddress = userAddress;
                 callback(null, results);
