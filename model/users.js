@@ -16,7 +16,7 @@ User.getFriendCount = function(userId, callback){
 
 // 친구 목록 얻기
 User.getFriends = function(userId, callback){
-
+    
 }
 
 // 유저 프로필 얻기
