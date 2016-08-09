@@ -46,7 +46,7 @@ function writeReply(req, res, next){
         if (err){
             return next(err);
         }
-        console.log('Uploaded result', results);
+        console.log('Uploaded result');
         const data = {
             msg : 'success',
             data : recordedReply
