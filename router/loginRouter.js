@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const User = require('../model/users.js');
+const s3upload = require('./s3upload.js');
 
 router.post('/auth/signup', signup);
 
@@ -17,7 +18,7 @@ function signup(req, res, next){
     console.log('parsed the multipart request');
     const coverImg = req.body.coverImg;
     const profileImg = req.body.profileImg;
-    var age = fields.babyAge;
+    var age = req.body.babyAge;
     var babyAge = new Date();
     babyAge.setFullYear(parseInt(age.substring(0,4)));
     babyAge.setMonth(parseInt(age.substring(5,6))-1);
@@ -27,18 +28,18 @@ function signup(req, res, next){
             return next(err);
         }
         var query = {
-            policyAgreeDate : fields.policyAgreeDate,
-            personalInfoAgreeDate : fields.personalInfoAgreeDate,
-            nickname : fields.nickname,
+            policyAgreeDate : req.body.policyAgreeDate,
+            personalInfoAgreeDate : req.body.personalInfoAgreeDate,
+            nickname : req.body.nickname,
             profilImg : profileImageUrl,
             profileThumbnail : profileThumbnailUrl,
             coverImg : coverImageUrl,
             userAddress : {
-                area1 : fields.area1,
-                area2 : fields.area2,
-                area3 : fields.area3,
-                area4 : fields.area4,
-                area5 : fields.area5
+                area1 : req.body.area1,
+                area2 : req.body.area2,
+                area3 : req.body.area3,
+                area4 : req.body.area4,
+                area5 : req.body.area5
             },
             baby : [{
                 babyAge: babyAge

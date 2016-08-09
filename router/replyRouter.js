@@ -42,12 +42,16 @@ function writeReply(req, res, next){
     reply.replyDate = now;
     console.log('This is willing to be uploaded reply >>>', reply);
     // reply = {postId : , replyContent : , userId : , replyDate : }
-    Post.recordReply(reply, (err, results)=>{
+    Post.recordReply(reply, (err, recordedReply)=>{
         if (err){
             return next(err);
         }
         console.log('Uploaded result', results);
-        res.json({postId : reply.postId});
+        const data = {
+            msg : 'success',
+            data : recordedReply
+        }
+        res.json(data);
     });
 }
 

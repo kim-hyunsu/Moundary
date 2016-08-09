@@ -12,12 +12,12 @@ db.getCollection('posts').insert({
 });
 
 db.getCollection('users').insert({
-    _id : ObjectId("57a43def8f296686e960fbed"),
+    _id : ObjectId("57a04ad314779f0c027a9b0c"),
     policyAgreeDate : new Date(),
     personalInfoAgreeDate : new Date(),
-    profileImg : "https://s3.ap-northeast-2.amazonaws.com/moundary/postImg/201685154832_57a04ad314779f0c027a9b0c.jpg",
-    coverImg : "https://s3.ap-northeast-2.amazonaws.com/moundary/postImg/201685154832_57a04ad314779f0c027a9b0c.jpg",
-    nickname : "아현맘",
+    profileImg : "https://s3.ap-northeast-2.amazonaws.com/moundary/postThumbnail/20168905145_57a04ad314779f0c027a9b0c.jpg",
+    coverImg : "https://s3.ap-northeast-2.amazonaws.com/moundary/postThumbnail/20168905145_57a04ad314779f0c027a9b0c.jpg",
+    nickname : "도도맘",
     userEmail : 'Email@email.co.kr',
     userAddress : {
         area1 : '충청남도',
@@ -33,7 +33,7 @@ db.getCollection('users').insert({
         event : true,
         share : true
     },
-    friendList : [ObjectId("57a04ad314779f0c027a9b0c"),ObjectId("57a43d4a8f296686e960fbec")],
+    friendList : [ObjectId("57a43d4a8f296686e960fbed"),ObjectId("57a43d4a8f296686e960fbec")],
     baby :[{
         babyAge : new Date()
     }],

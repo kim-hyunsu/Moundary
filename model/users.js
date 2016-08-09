@@ -57,17 +57,6 @@ User.getBabyAge = function(userId, callback){
     });
 }
 
-// 아이 나이 수정
-User.updateBabyAge = function(userId, babyId, babyAge, callback){
-    user.update({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, (err, result)=>{
-        if (err){
-            return callback(err, null);
-        }
-        callback(null, result);
-    });
-    // 넘겨줄거 제대로 정하기
-}
-
 // 프로필사진url과 이메일주소 저장 => callback으로 userId 전달
 User.createUser = function(userInfo, callback){
     
@@ -79,8 +68,24 @@ User.updateUser = function(userId, userInfo, callback){
         if (err){
             return callback(err, null);
         }
-        callback(null, result);
+        userInfo._id = result._id;
+        callback(null, userInfo);
     });
+}
+
+// 아이 나이 수정
+User.updateBabyAge = function(userId, babyId, babyAge, callback){
+    user.update({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        const baby = {
+            _id : babyId,
+            babyAge : babyAge
+        }
+        callback(null, baby);
+    });
+    // 넘겨줄거 제대로 정하기
 }
 
 // ageRange 코드 값에 따라 알맞은 생년월일 범위 반환

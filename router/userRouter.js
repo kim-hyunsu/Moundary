@@ -47,7 +47,7 @@ function profile(req, res, next){
         }
         const data = {
             msg : 'success',
-            userInfo : result
+            data : result
         }
         res.json(data);
     });
@@ -61,8 +61,9 @@ function getBabyInfo(req, res, next){
         }
         const data = {
             msg : 'success',
-            babyAge : result
+            data : result
         }
+        res.json(data);
     });
 }
 
@@ -70,8 +71,19 @@ function modifyProfile(req, res, next){
     const now = new Date();
     const userId = req.query.userId;
     const updateCode = req.body.updateCode;
-    var query = {};
-    var data;
+    var query; // 수정할 정보를 담을 query
+    var data; // update된 유저의 
+    const cb = function(err, updatedUser){
+        if (err){
+            return next(err);
+        }
+        data = {
+            msg : 'success',
+            data : updatedUser
+        }
+        res.json(data);
+    }
+
     switch(updateCode){
         case 1: // 커버 이미지 수정
         const coverImg = req.body.coverImg;
@@ -82,17 +94,9 @@ function modifyProfile(req, res, next){
             query = {
                 coverImg : coverImg
             }
-            User.updateUser(userId, query, (err, result)=>{
-                if (err){
-                    return next(err);
-                }
-                data={
-                    msg : 'success',
-                    updateCode : updateCode
-                }
-                res.json(data);
-            });
+            User.updateUser(userId, query, cb);
         });
+
         case 2: //프로필 이미지 수정
         const profileImg = req.body.profileImg;
         const profilePath = profileImg.path;
@@ -111,24 +115,16 @@ function modifyProfile(req, res, next){
                     profileImg : imageUrl,
                     profileThumbnail : thumbnailUrl
                 }
-                User.updateUser(userId, query, (err, result)=>{
+                User.updateUser(userId, query, (err, updatedUser)=>{
                     if (err){
                         return next(err);
                     }
                     // 유저가 쓴 모든 글과 댓글들에서 프로필썸네일 url 수정
-                    query = {
+                    const queryForPost = {
                         profileThumbnail : thumbnailUrl
                     }
-                    Post.updatePostUserInfo(userId, query, (err, results)=>{
-                        if (err){
-                            return next(err);
-                        }
-                        // 응답
-                        data = {
-                            msg : 'success',
-                            updateCode : updateCode
-                        }
-                        res.json(data);
+                    Post.updatePostUserInfo(userId, queryForPost, (err, results)=>{
+                        cb(err, updatedUser);
                         // 임시 폴더에 있는 이미지 모두 삭제
                         fs.unlink(profilePath, (err)=>{
                             if (err){
@@ -151,39 +147,26 @@ function modifyProfile(req, res, next){
                 });
             });
         });
+
         case 3: // 닉네임 수정
         query = {
             nickname : req.body.nickname
         }
-        User.updateUser(userId, query, (err, result)=>{
+        User.updateUser(userId, query, (err, updatedUser)=>{
             if (err){
                 return next(err, null);
             }
-            User.updatePostUserInfo(userId, query, (err, results)=>{
-                if (err){
-                    return next(err, null);
-                }
-                data = {
-                    msg : 'success',
-                    updateCode : updateCode
-                }
-                res.json(data);
+            User.updatePostUserInfo(userId, query, (err, result)=>{
+                cb(err, updatedUser);
             });
         });
+
         case 4: // 주소수정
         query = {
             userAddress : req.body.address
         }
-        User.updateUser(userId, query, (err, result)=>{
-            if (err){
-                return next(err, null);
-            }
-            data = {
-                msg : 'success',
-                updateCode : updateCode
-            }
-            res.json(data);
-        });
+        User.updateUser(userId, query, cb);
+
         case 6: // 아이 생년월일 수정
         const babyId = req.body.babyId;
         const age = req.body.babyAge;
@@ -191,30 +174,11 @@ function modifyProfile(req, res, next){
         babyAge.setFullYear(parseInt(age.substring(0,4)));
         babyAge.setMonth(parseInt(age.substring(5,6))-1);
         babyAge.setDate(parseInt(age.substring(7,8)));
-        User.updateBabyAge(userId, babyId, babyAge, (err, result)=>{
-            if (err){
-                return next(err);
-            }
-            data = {
-                msg : 'success',
-                updateCode : updateCode
-            }
-            res.json(data);
-        });
+        User.updateBabyAge(userId, babyId, babyAge, cb);
+
         case 5: // 아이 추가
-        query['$push']['baby'] = {
-            babyAge : req.body.addBaby
-        }
-        User.updateUser(userId, query, (err, result)=>{
-            if (err){
-                return next(err);
-            }
-            data = {
-                msg : 'success',
-                updateCode : updateCode
-            }
-            res.json(data);
-        });
+        query = { $push : { baby : { babyAge : req.body.addBaby } } }
+        User.updateUser(userId, query, cb);
     }
 }
 

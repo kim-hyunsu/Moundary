@@ -92,7 +92,7 @@ function writePost(req, res, next){
         }
         console.log('Uploaded the post image');
         // post infomations
-        const diary = {
+        var diary = {
             category : 0, //diary
             userId : userId,
             postImg : imageUrl,
@@ -103,7 +103,7 @@ function writePost(req, res, next){
             reply : [] 
         }
         // create a document of the post on the post collection of the db, 'moundary'
-        Post.recordPost(diary, (err, postId)=>{
+        Post.recordPost(diary, (err, recordedPost)=>{
             if (err){
                 fs.unlink(postImg.path, (err)=>{
                     if (err){
@@ -118,7 +118,7 @@ function writePost(req, res, next){
             console.log('Recorded the post on the db');
             const data = {
                 msg: 'success',
-                postId : postId.toString()
+                data : recordedPost
             }
             console.log('Final data >>>', data);
             res.json(data);

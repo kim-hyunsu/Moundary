@@ -130,7 +130,8 @@ Post.recordPost = function(APost, callback){
                 return callback(err, null);
             }
             console.log('Recording Complete');
-            callback(null, result._id);
+            APost._id = result._id;
+            callback(null, APost);
         });
     });
 }
@@ -179,7 +180,8 @@ Post.recordReply = function(reply, callback){
             }
             console.log('REPLY UPDATE COMPLETE');
             console.log('replyUpload', result);
-            callback(null, result);
+            reply._id = result._id;
+            callback(null, reply);
         });
     });
 }

@@ -19,7 +19,7 @@ const infoRouter = require('./router/infoRouter.js');
 const replyRouter = require('./router/replyRouter.js');
 const userRouter = require('./router/userRouter.js');
 
-// delete expried information posts every hours
+// delete expired information posts every hours
 var mongoConnectionString = "mongodb://52.78.98.25:27017/moundary";
 var agenda = new Agenda({db: {address: mongoConnectionString}});
 agenda.define('deleteExpiredPosts', (job, done)=>{
@@ -39,7 +39,7 @@ agenda.on('ready', ()=>{
 
 // middleware
 app.use(morgan('dev'));
-app.use(bodyParser.json()); // transmit with json
+app.use(bodyParser.urlencoded({extended:false})); // transmit with urlencoded
 app.use(formidable.parse({ // and multipart
     encoding : 'utf-8',
     uploadDir : __dirname + '/upload',

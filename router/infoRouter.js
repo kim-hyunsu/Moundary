@@ -113,11 +113,16 @@ function writeInfo(req, res, next){
             post.postLikeUsers = [];
             post.replyCount = 0;
             post.reply =[];
-            Post.recordPost(post, (err, postId)=>{
+            Post.recordPost(post, (err, recordedPost)=>{
                 if (err){
                     return next(err);
                 }
                 console.log('The info post recorded in the db');
+                const data = {
+                    msg : 'success',
+                    data : recordedPost
+                }
+                res.json(data);
                 fs.unlink(postImg.path, (err)=>{
                     if (err){
                         console.log('Fail to delete a temporary file >>>', postImg.path)
@@ -132,11 +137,6 @@ function writeInfo(req, res, next){
                         else{
                             console.log('Removed the temporary thumbnail image of the post')
                         }
-                        const data = {
-                            msg : 'success',
-                            postId : postId
-                        }
-                        res.json(data);
                     })
                 })
             });
