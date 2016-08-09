@@ -31,7 +31,7 @@ function signup(req, res, next){
             policyAgreeDate : req.body.policyAgreeDate,
             personalInfoAgreeDate : req.body.personalInfoAgreeDate,
             nickname : req.body.nickname,
-            profilImg : profileImageUrl,
+            profileImg : profileImageUrl,
             profileThumbnail : profileThumbnailUrl,
             coverImg : coverImageUrl,
             userAddress : {
