@@ -15,6 +15,9 @@ Post.getPosts = function(endPost, userId, count, callback){
     }
     user.findOne({_id : userId}, 'friendList -_id')
         .then((results)=>{
+            if (!results){
+                callback(err, null);
+            }
             const friendList = results.friendList;
             console.log('FRIEDNLIST', friendList)
             var promise;
@@ -120,7 +123,7 @@ Post.getMyPosts = function(endPost, userId, count, callback){
 Post.recordPost = function(APost, callback){
     console.log('Recording the post');
     user.findOne({_id : APost.userId}, 'nickname profileThumbnail', (err, results)=>{
-        if (err){
+        if (err || !results){
             return callback(err, null);
         }
         APost.nickname = results.nickname;
