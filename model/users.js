@@ -169,6 +169,9 @@ User.getUsersByAddress = function(endUser, userAddress, ageRange, count, callbac
 
 // 사용자 주변 사용자들 불러오기
 User.getUsersNearby = function(endUser, userId, ageRange, count, callback){ //TODO - ageRange, count 고려하고 결과에 isRequestUser 넣기
+    if(!endUser){
+        endUser = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
+    }   
     if(!count){
         count = 60;
     }

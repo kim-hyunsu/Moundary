@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const User = require('../model/users.js');
 const Post = require('../model/posts.js');
+const Holder = require('../model/friendsHold.js');
 const s3upload = require('./s3upload.js');
+
 // 프로필 페이지, 프로필 수정
 router.route('/user')
     .get(profile)
@@ -186,11 +188,72 @@ function modifyProfile(req, res, next){
 
 function userList(req, res, next){
     const userId = req.query.userId;
+    const address = {
+        area1 : req.query.area1,
+        area2 : req.query.area2,
+        area3 : req.query.area3,
+        area4 : req.query.area4,
+        area5 : req.query.area5
+    }
+    const ageRange = req.query.ageRange;
+    const endUser = req.query.endUser;
+    const userCount = req.query.userCount;
+
+    const cb = function(err, result){
+        if (err){
+            return next(err);
+        }
+        var data = {
+            msg : 'success',
+            myAddress : null,
+            page : {
+                userCount : result.length
+            },
+            data : result
+        }
+        if (data.userCount ==0){ //해당 지역에 사람이 아무도 없다면
+            data.page.endUser = null;
+        }
+        else{
+            data.page.endUser = result[0]._id;
+        }
+        res.json(data);
+    }
+
+    if ( !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 ){ //주소입력이 없다면 유저가 속한 동/읍/면에서 탐색
+        User.getUsersNearby(endUser, userId, ageRange, count, cb);
+    }
+    else{
+        User.getUsersByAddress(endUser, userId, ageRange, count, cb);
+    }
 
 }
 
 function requestFriend(req, res, next){
-    
+    const userId = req.query.userId;
+    const oppositeUserId = req.body.userId;
+    const cb = function(err, result)=>{
+        if (err){
+            return next(err);
+        }
+        res.json( { msg : 'success' } );
+    }
+    switch(req.params.request){
+        case 'apply': // 친구 신청
+        Holder.apply(userId, oppositeUserId, cb);
+
+        case 'cancel': // 친구 취소
+        Holder.cancel(userId, oppositeUserId, cb);
+
+        case 'allow': // 친구 수락
+        Holder.allow(userId, oppositeUserId, cb);
+
+        case 'reject': // 친구 거절
+        Holder.reject(userId, oppositeUserId, cb);
+
+        case 'delete': // 친구 삭제
+        Holder.delete(userId, oppositeUserId, cb);
+    }
 }
 
 
