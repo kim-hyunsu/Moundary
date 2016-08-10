@@ -51,7 +51,9 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         if (err){
             return callback(err, null);
         }
-        const userAddress = results.userAddress;
+        console.log('USER FOUND >>>', results);
+        const userAddress = results.userAddress.toObject();
+        console.log('USERADDRESS >>>', userAddress);
         var query = {};
         for(var key in userAddress){
             query["postAddress."+key] = userAddress[key];
@@ -59,14 +61,17 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         if (category){
             query.category = category;
         }
+        console.log('QUERY>>>', query);
         var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
         if (!category){
             promise = promise.where('category').ne(0);
         }
+        console.log('CHECK PROMISE');
         promise.limit(count)
-            .then((results)=>{
-                results.userAddress = userAddress;
-                callback(null, results);
+            .then((result)=>{
+                console.log('POST FOUND >>>', result);
+                result.userAddress = userAddress;
+                callback(null, result);
             }, (err)=>{
                 callback(err, null);
             });

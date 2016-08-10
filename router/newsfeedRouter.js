@@ -33,14 +33,19 @@ function newsList(req, res, next){
         }
         const hasFriend = results.hasFriend;
         delete results.hasFriend;
-        const data = {
+        var data = {
             msg : 'success',
             hasFriend : hasFriend,
             page : {
-                postCount : results.length,
-                endPost : results[0]._id
+                postCount : results.length
             },
             data : results
+        }
+        if (results.length ==0 ){
+            data.page.endPost = null;
+        }
+        else{
+            data.page.endPost = results[0]._id
         }
         res.json(data);
     });
@@ -56,13 +61,18 @@ function myPostList(req, res, next){
         if (err){
             return next(err);
         }
-        const data = {
+        var data = {
             msg : 'success',
             page : {
-                postCount : results.length,
-                endPost : results[0]._id
+                postCount : results.length
             },
             data : results
+        }
+        if (results.length ==0 ){
+            data.page.endPost = null;
+        }
+        else{
+            data.page.endPost = results[0]._id
         }
         res.json(data);
     });

@@ -20,6 +20,7 @@ router.route('/info/detail')
 router.put('/post/like', likeInfo);
 
 function infoList(req, res, next){
+    console.log('get (get) request of /info');
     var postAddress = req.query;
     const category = postAddress.category;
     const endPost = postAddress.endPost;
@@ -29,20 +30,27 @@ function infoList(req, res, next){
     delete postAddress.userId;
 
     if (Object.keys(postAddress).length == 0){
+        console.log('No postAddress querystring');
         Post.getInfoPostsNearby(endPost, userId, category, 60, (err, results)=>{
             if (err){
                 return next(err);
             }
+            console.log('Got information of near by posts')
             const myAddress = results.userAddress;
             delete results.userAddress;
-            const data = {
+            var data = {
                 msg : 'success',
                 myAddress : myAddress,
                 page : {
-                    postCount : results.length,
-                    endPost : results[0]._id
+                    postCount : results.length
                 },
                 data : results
+            }
+            if (results.length ==0 ){
+                data.page.endPost = null;
+            }
+            else{
+                data.page.endPost = results[0]._id
             }
             res.json(data);
         });
@@ -56,10 +64,15 @@ function infoList(req, res, next){
                 msg : 'success',
                 myAddress : null,
                 page : {
-                    postCount : results.length,
-                    endPost : results[0]._id
+                    postCount : results.length
                 },
                 data : results
+            }
+            if (results.length ==0 ){
+                data.page.endPost = null;
+            }
+            else{
+                data.page.endPost = results[0]._id
             }
             res.json(data);
         });
