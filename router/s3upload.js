@@ -15,7 +15,8 @@ const bucketName = 'moundary';
 // folder : postImg, postThumbnail, profileImg, profileThumbnail, coverImg
 
 // 원본 이미지 업로드 => callback(err, imageUrl)
-s3upload.original = function(imagePath, imageType, folder, date, userId, callback){
+s3upload.original = function(imagePath, imageType, folder, userId, callback){
+    const date = new Date();
     const extname = pathUtil.extname(imagePath);
     if (extname.length == 0){
         console.log('No input image');
@@ -42,8 +43,9 @@ s3upload.original = function(imagePath, imageType, folder, date, userId, callbac
     });
 }
 
-//썸네일 이미지 변환 후 썸네일 업로드 => callback(err, imageUrl)
-s3upload.thumbnail = function(imagePath, imageType, folder, date, userId, callback){
+// 썸네일 이미지 변환 후 썸네일 업로드 => callback(err, imageUrl)
+s3upload.thumbnail = function(imagePath, imageType, folder, userId, callback){
+    const date = new Date();
     const extname = pathUtil.extname(imagePath);
     if (extname.length == 0){
         return callback(null, null);
@@ -54,39 +56,39 @@ s3upload.thumbnail = function(imagePath, imageType, folder, date, userId, callba
         srcPath : imagePath,
         dstPath : thumbnail,
         width : 339
-    }, (err)=>{
-        if (err){
-            fs.unlink(thumbnail, (err)=>{
-                if (err){
-                    console.log('Fail to delete a temporary thumbnail file >>>', thumbnail);
-                }
-                else{
-                    console.log('Removed the temporary thumbanil file');
-                }
-                return callback(err, null);
-            });
-
-        }
-        console.log('The image resized');
-        var readStream = fs.createReadStream(thumbnail);
-        const itemKey = folder+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
-                    +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
-        const params = {
-            Bucket : bucketName,
-            Key : itemKey,
-            ACL : 'public-read',
-            Body : readStream,
-            ContentType : imageType
-        }
-        s3.putObject(params, (err, data)=>{
+    },(err, stdout, stderr)=>{
             if (err){
-                return callback(err, null);
+                fs.unlink(thumbnail, (err)=>{
+                    if (err){
+                        console.log('Fail to delete a temporary thumbnail file >>>', thumbnail);
+                    }
+                    else{
+                        console.log('Removed the temporary thumbanil file');
+                    }
+                    return callback(err, null);
+                });
+                console.log('BUG');
             }
-            const path = 'http://' + s3.endpoint.host + '/' + bucketName + '/'+ itemKey;
-            console.log('The thumbnail uploading complete >>>', path);
-            callback(null, path);
+            console.log('The image resized');
+            var readStream = fs.createReadStream(thumbnail);
+            const itemKey = folder+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
+                        +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
+            const params = {
+                Bucket : bucketName,
+                Key : itemKey,
+                ACL : 'public-read',
+                Body : readStream,
+                ContentType : imageType
+            }
+            s3.putObject(params, (err, data)=>{
+                if (err){
+                    return callback(err, null);
+                }
+                const path = 'http://' + s3.endpoint.host + '/' + bucketName + '/'+ itemKey;
+                console.log('The thumbnail uploading complete >>>', path);
+                callback(null, path);
+            });
         });
-    });
-}
+    }
 
 module.exports = s3upload;

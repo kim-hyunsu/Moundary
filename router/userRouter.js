@@ -39,12 +39,14 @@ function friendList(req, res, next){
 }
 
 function profile(req, res, next){
+    console.log('get (get) request of /user');
     const profileUserId = req.query.profileUserId;  //session에서 긁지 않고 요청으로 받는다.
     const userId = req.query.userId;
     User.getProfile(profileUserId, userId, (err, result)=>{
         if (err){
             return next(err);
         }
+        console.log('GOT THE PROFILE INFORMATION');
         const data = {
             msg : 'success',
             data : result
@@ -87,7 +89,7 @@ function modifyProfile(req, res, next){
     switch(updateCode){
         case 1: // 커버 이미지 수정
         const coverImg = req.body.coverImg;
-        s3upload.original(coverImg.path, coverImg.type, 'coverImg', now, userId, (err, imageUrl)=>{
+        s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, imageUrl)=>{
             if (err){
                 return next(err);
             }
@@ -101,12 +103,12 @@ function modifyProfile(req, res, next){
         const profileImg = req.body.profileImg;
         const profilePath = profileImg.path;
         // s3에 원본 이미지 업로드
-        s3upload.original(profilePath, profileImg.type, 'profileImg', now, userId, (err, imageUrl)=>{
+        s3upload.original(profilePath, profileImg.type, 'profileImg', userId, (err, imageUrl)=>{
             if (err){
                 return next(err);
             }
             // 썸네일 이미지 변환후 s3에 이미지 업로드
-            s3upload.thumbnail(profilePath, profileImg.type, 'profileThumbnail', now, userId, (err, thumbnailUrl)=>{
+            s3upload.thumbnail(profilePath, profileImg.type, 'profileThumbnail', userId, (err, thumbnailUrl)=>{
                 if (err){
                     return next(err);
                 }
@@ -133,7 +135,7 @@ function modifyProfile(req, res, next){
                             else{
                                 console.log('Removed the temporary image of the post');
                             }
-                            const thumbnailPath = __dirname+'/../upload' + 'thumbnail_'+pathUtil.basename(profilePath);
+                            const thumbnailPath = __dirname+'/../upload' + 'thumb_'+pathUtil.basename(profilePath);
                             fs.unlink(thumbnailPath, (err)=>{
                                 if (err){
                                     console.log('Fail to delete a temporary file >>>', thumbnailPath);

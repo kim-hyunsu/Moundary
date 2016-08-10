@@ -19,12 +19,12 @@ db.getCollection('users').insert({
     coverImg : "https://s3.ap-northeast-2.amazonaws.com/moundary/postThumbnail/20168905145_57a04ad314779f0c027a9b0c.jpg",
     nickname : "도도맘",
     userEmail : 'Email@email.co.kr',
-    userAddress : {
-        area1 : '충청남도',
-        area2 : '천안시',
-        area3 : '서북구',
-        area4 : '두정동',
-        area5 : '한성아파트'
+    "userAddress" : {
+        "area1" : '충청남도',
+        "area2" : '천안시',
+        "area3" : '서북구',
+        "area4" : '쌍용동',
+        "area5" : '백석아파트'
     },
     joinPath : 1,
     interest : {

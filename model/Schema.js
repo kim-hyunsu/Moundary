@@ -12,20 +12,21 @@ const postSchema = Schema({
         area5: String
     },
     due : Date,
-    userId : Schema.Types.ObjectId,
-    nickname : String,
+    userId : {type : Schema.Types.ObjectId, ref : 'user'}, 
+    nickname : { type : String, ref : 'user'},
+    profileThumbnail : { type : String, ref : 'user'},
     postImg : String,
     postThumbnail : String,
     postContent : String,
-    postDate : Date,
+    postDate : { type : Date, default : Date.now}, //default>>> now
     postLikeUsers : [Schema.Types.ObjectId],
-    replyCount : Number,
+    replyCount : { type : Number, default : 0}, //default
     reply : [{
         userId : Schema.Types.ObjectId,
         profileThumbnail : String,
         nickname : String,  
         replyContent : String,
-        replyDate : Date,
+        replyDate : { type : Date, default : Date.now},
         replyLikeUsers : [Schema.Types.ObjectId] 
     }]
 });
@@ -34,14 +35,14 @@ module.exports.post = postSchema;
 
 const userSchema = Schema({
     userId : Schema.Types.ObjectId,
-    policyAgreeDate : Date,
-    personalInfoAgreeDate : Date,
+    policyAgreeDate : { type : Date, default : Date.now},
+    personalInfoAgreeDate : { type : Date, default : Date.now },
     profileImg : String,
     profileThumbnail : String,
     coverImg : String,
     nickname : String,
     userEmail : String,
-    userAdress : {
+    userAddress : {
         area1 : String,
         area2 : String,
         area3 : String,
@@ -54,14 +55,14 @@ const userSchema = Schema({
         babyAge: Date
     }],
     alram : {
-        mode : Number,
-        sale : Boolean,
-        store : Boolean,
-        event : Boolean,
-        share : Boolean,
-        moundary : Boolean,
-        reply : Boolean,
-        like : Boolean
+        mode : {type : Number, default : 1},
+        sale : { type : Boolean, default : false},
+        store : { type : Boolean, default : false},
+        event : { type : Boolean, default : false},
+        share : { type : Boolean, default : false},
+        moundary : { type : Boolean, default : true},
+        reply : { type : Boolean, default : true},
+        like : { type : Boolean, default : true}
     }
 });
 
@@ -69,9 +70,9 @@ module.exports.user = userSchema;
 
 const holderSchema =  Schema({
     _id : Schema.Types.ObjectId,
-    requestUserId : Schema.Types.ObjectId,
-    responseUserId : Schema.Types.ObjectId,
-    requestDate : Date
+    requestUserId : { type : Schema.Types.ObjectId, ref : 'user'},
+    responseUserId : {type : Schema.Types.ObjectId, ref : 'user'},
+    requestDate : {type : Date, ref: Date.now}
 });
 
 module.exports.holder = holderSchema;

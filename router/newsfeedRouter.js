@@ -70,7 +70,6 @@ function myPostList(req, res, next){
 
 function writePost(req, res, next){
     console.log('get (post) request of /post');
-    const now = new Date();
     // bring the userId from the session
     const userId = req.query.userId;
     console.log('parsed the multipart request');
@@ -78,7 +77,7 @@ function writePost(req, res, next){
     var postImg = req.body.postImg;
     // upload the original image to s3
     console.log('POSTiMG',postImg);
-    s3upload.original(postImg.path, postImg.type, 'postImg', now, userId, (err, imageUrl)=>{
+    s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, imageUrl)=>{
         if (err){
             fs.unlink(postImg.path, (err)=>{
                 if (err){
@@ -97,9 +96,7 @@ function writePost(req, res, next){
             userId : userId,
             postImg : imageUrl,
             postContent : postContent,
-            postDate : now,
             postLikeUsers : [],
-            replyCount : 0,
             reply : [] 
         }
         // create a document of the post on the post collection of the db, 'moundary'

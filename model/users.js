@@ -23,25 +23,39 @@ User.getFriends = function(userId, callback){
 User.getProfile = function(profileUserId, userId, callback){
     user.findOne({_id: profileUserId}, 'profileImg coverImg nickname userAddress friendList')
         .then((result)=>{
+            result = result.toObject();
+            console.log('USER FOUND >>>', result);
             if (result.friendList.indexOf(mongoose.Types.ObjectId(userId)) == -1){
                 // 친구 신청 중인지 아닌지 확인
+                console.log('NOT YET THE FRIEND');
                 holder.where({requestUserId: userId, responseUserId : profileUserId}).count((err, count)=>{
-                    if (count==0){
+                    if (err){
+                        return callback(err, null);
+                    }
+                    else if (count==0){
+                        console.log('NOT FRIEND');
                         //친구 요청 중도 아님=> 친구 아님
                         result.isFriend = -1;
+                        console.log('type :', typeof result);
+                        console.log('RESULT', result);
                     }
                     else{
+                        console.log('WAITING TO PERMIT FRIEND REQUEST');
                         // 친구 요청중
                         result.isFriend = 0;
                     }
+                    delete result.friendList;
+                    callback(null, result);
                 });
+                console.log('HOLDER SEARCHING COMPLETE');
             }
             else{
+                console.log('ALREADY FRIEND');
                 // 이미 친구, isFriend = 1
                 result.isFriend = 1;
+                delete result.friendList;
+                callback(null, result);
             }
-            delete result.friendList;
-            callback(null, result);
         }, (err)=>{
             callback(err, null);
         });
@@ -59,7 +73,12 @@ User.getBabyAge = function(userId, callback){
 
 // 프로필사진url과 이메일주소 저장 => callback으로 userId 전달
 User.createUser = function(userInfo, callback){
-    
+    user.create(userInfo, (err, result)=>{
+        if (err){
+            callback(err, null);
+        }
+        callback(null, result);
+    });
 }
 
 // userInfo에 객체로 유저 정보를 입력하면 해당 정보 저장
@@ -151,7 +170,7 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){ //TO
         if (err){
             return callback(err, null);
         }
-        const userAddress = result.userAddress;
+        var userAddress = result.userAddress;
         delete userAddress.area5;  //상세지역은 빼도 '동'까지만 검색
         User.getUsersByAddress(endUser, userAddress, ageRange, count, (err, results)=>{
             if (err){

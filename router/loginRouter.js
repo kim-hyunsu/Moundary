@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const pathUtil = require('path');
 
 const User = require('../model/users.js');
 const s3upload = require('./s3upload.js');
@@ -21,15 +23,13 @@ function signup(req, res, next){
     var age = req.body.babyAge;
     var babyAge = new Date();
     babyAge.setFullYear(parseInt(age.substring(0,4)));
-    babyAge.setMonth(parseInt(age.substring(5,6))-1);
-    babyAge.setDate(parseInt(age.substring(7,8)));
+    babyAge.setMonth(parseInt(age.substring(4,6))-1);
+    babyAge.setDate(parseInt(age.substring(6,8)));
     var record = function(err, profileImageUrl, profileThumbnailUrl, coverImageUrl){
         if (err){
             return next(err);
         }
         var query = {
-            policyAgreeDate : req.body.policyAgreeDate,
-            personalInfoAgreeDate : req.body.personalInfoAgreeDate,
             nickname : req.body.nickname,
             profileImg : profileImageUrl,
             profileThumbnail : profileThumbnailUrl,
@@ -46,30 +46,53 @@ function signup(req, res, next){
             }],
 
         }
-        User.updateUser(userId, query, (err, userId)=>{
+        if (policyAgreeDate){
+            query.policyAgreeDate = req.body.policyAgreeDate
+        }
+        if (personalInfoAgreeDate){
+            query.personalInfoAgreeDate = req.body.personalInfoAgreeDate
+        }
+        console.log(userId);
+        User.updateUser(userId, query, (err, result)=>{
             if (err){
                 return next(err);
             }
             const data ={
                 msg : 'success',
-                userId : userId
+                userId : result
             }
             res.json(data);
         });
     }
-    s3upload.original(profileImg.path, profileImg.type, 'profileImg', now, userId, (err, profileImageUrl)=>{
+    s3upload.original(profileImg.path, profileImg.type, 'profileImg', userId, (err, profileImageUrl)=>{
         if (err){
             return next(err);
         }
-        s3upload.thumbnail(profileImg.path, profileImg.type, 'profileThumbnail', now, userId, (err, profileThumbnailUrl)=>{
+        s3upload.thumbnail(profileImg.path, profileImg.type, 'profileThumbnail', userId, (err, profileThumbnailUrl)=>{
             if (err){
                 return next(err);
             }
-            s3upload.original(coverImg.path, coverImg.type, 'coverImg', now, userId, (err, coverImageUrl)=>{
+            s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, coverImageUrl)=>{
                 if (err){
                     return next(err);
                 }
                 record(null, profileImageUrl, profileThumbnailUrl, coverImageUrl);
+                fs.unlink(profileImg.path, (err)=>{
+                    if (err){
+                        console.log(err);
+                    }
+                    thumbnailPath = __dirname+'/../upload/' + 'thumb_'+pathUtil.basename(profileImg.path);
+                    fs.unlink(thumbnailPath, (err)=>{
+                        if (err){
+                            console.log(err);
+                        }
+                        fs.unlink(coverImg.path, (err)=>{
+                            if (err){
+                                console.log(err);
+                            }
+                        })
+                    });
+                });
                 // TODO- delete temporary file 
             });
         });
@@ -82,32 +105,33 @@ function signup(req, res, next){
 // we should use a http client module to request to get image data corresponding to the url.
 // Consequently, we can create a image file using a fs module.
 // Finally, we can make a thumbnail image from the file.
-function registerUser(token, callback){
+function registerUser(joinPath, token, callback){
     // TODO-가입경로 가져오기
     //     -token에서 이메일 정보 가져오기
-    var userEmail;
-    var joinPath;
+    var userEmail = token;
     const register ={
         userEmail : userEmail,
         joinPath : joinPath,
-        friendList :[],
-        alarm : {
-            moudaryAlarm : true,
-            replyAlarm : true,
-            likeAlarm : true
-        },
-        interest : {
-            sale : true,
-            store : true,
-            event : true,
-            share : true
-        }
+        friendList :[]
     }
+    User.createUser(register, (err, result)=>{
+        if (err){
+            return callback(err ,null);
+        }
+        callback(null, result);
+    })
 }
 
 function FBLogin(req, res, next){
-
+    const userEmail = req.body.userEmail;
     //registerUser
+    registerUser(1,userEmail,(err, result)=>{
+        if (err){
+            return next(err);
+        }
+        console.log('FBLOGIN result >>>' , result)
+        res.end();
+    })
 }
 
 function kakaoLogin(req, res, next){

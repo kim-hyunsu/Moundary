@@ -54,6 +54,7 @@ function infoList(req, res, next){
             }
             const data = {
                 msg : 'success',
+                myAddress : null,
                 page : {
                     postCount : results.length,
                     endPost : results[0]._id
@@ -67,9 +68,8 @@ function infoList(req, res, next){
 
 function writeInfo(req, res, next){
     console.log('get (post) request of /info');
-    const now = new Date();
     var dueDate = new Date();
-    dueDate.setDate(dueDate.getDate()+req.body.due);
+    dueDate.setDate(dueDate.getDate()+parseInt(req.body.due));
     const userId = req.query.userId;
     const body = req.body;
     const postAddress = {
@@ -81,13 +81,13 @@ function writeInfo(req, res, next){
     };
     var post = {
         userId : userId,
-        category : body.category,
+        category : parseInt(body.category),
         due : dueDate,
         postContent : body.postContent,
         postAddress : postAddress
     };
     const postImg = body.postImg;
-    s3upload.original(postImg.path, postImg.type, 'postImg', now, userId, (err, imageUrl)=>{
+    s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, imageUrl)=>{
         if(err){
             fs.unlink(postImg.path, (err)=>{
                 if (err){
@@ -101,17 +101,14 @@ function writeInfo(req, res, next){
         }
         console.log('s3 uploaded the original image');
         post.postImg = imageUrl;
-        s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', now, userId, (err, imageUrl)=>{
-            const thumbnailPath = __dirname+'/../upload/' + 'thumbnail_'+pathUtil.basename(postImg.path);
+        s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', userId, (err, imageUrl)=>{
+            const thumbnailPath = __dirname+'/../upload/' + 'thumb_'+pathUtil.basename(postImg.path);
             if(err){
                 return next(err);
             }
             console.log('s3 uploaded the thumbnail image');
             post.postThumbnail = imageUrl;
-            post.userId = post.userId;
-            post.postDate = now;
             post.postLikeUsers = [];
-            post.replyCount = 0;
             post.reply =[];
             Post.recordPost(post, (err, recordedPost)=>{
                 if (err){

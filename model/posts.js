@@ -138,6 +138,47 @@ Post.recordPost = function(APost, callback){
         });
     });
 }
+// Post.recordPost = function(APost, callback){
+//     console.log('Recording the post');
+//     post.create(APost, (err, result)=>{
+//         if (err){
+//             return callback(err, null);
+//         }
+//         console.log('ID >>>', result._id);
+//         post.find({_id : result._id})
+//             .populate({
+//                 path : 'nickname',
+//                 match : {_id : APost},
+//                 select : 'nickname -_id'
+//             })
+//             .then((results)=>{
+//                 console.log('RESULT >>>', results);
+//                 callback(null, results);
+//             }, (err)=>{
+//                 callback(err, null);
+//             });
+//     });
+// }
+// Post.recordPost = function(APost, callback){
+//     console.log('Recording the post');
+//     post.create(APost)
+//         .populate({
+//             path : 'nickname',
+//             match : {_id : APost.userId},
+//             select : 'nickname'
+//         })
+//         .populate({
+//             path : 'profileThumbnail',
+//             match : {_id : APost.userId},
+//             select : 'profileThumbnail'
+//         })
+//         .then((results)=>{
+//             console.log('RESULT >>>', results);
+//             callback(null, results);
+//         }, (err)=>{
+//             callback(err, null);
+//         });
+// }
 
 // 게시물 상세 정보 가져오기
 Post.getPostDetail = function(postId, callback){
