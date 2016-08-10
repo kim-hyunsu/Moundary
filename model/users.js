@@ -134,6 +134,9 @@ function ageRangeSwitch(ageRange){
 
 // 해당 주소에 있는 사용자들 불러오기
 User.getUsersByAddress = function(endUser, userAddress, ageRange, count, callback){
+    if(!count){
+        count = 60;
+    }
     var min, max = ageRangeSwitch(ageRange);
     var query = {};
     for(var key in userAddress){
@@ -166,6 +169,9 @@ User.getUsersByAddress = function(endUser, userAddress, ageRange, count, callbac
 
 // 사용자 주변 사용자들 불러오기
 User.getUsersNearby = function(endUser, userId, ageRange, count, callback){ //TODO - ageRange, count 고려하고 결과에 isRequestUser 넣기
+    if(!count){
+        count = 60;
+    }
     user.findOne({_id : userId}, 'userAddress babyAge -_id', (err, result)=>{
         if (err){
             return callback(err, null);

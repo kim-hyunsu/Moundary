@@ -13,6 +13,9 @@ Post.getPosts = function(endPost, userId, count, callback){
     if (!endPost){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }
+    if (!count){
+        count = 60;
+    }
     user.findOne({_id : userId}, 'friendList -_id')
         .then((results)=>{
             if (!results){
@@ -47,6 +50,9 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
     if(!endPost){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }   
+    if(!count){
+        count = 60;
+    }
     user.findOne({_id : userId}, 'userAddress -_id', (err, results)=>{
         if (err){
             return callback(err, null);
@@ -83,6 +89,9 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
     if(!endPost){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }
+    if (!count){
+        count = 60;
+    }
     var query = {};
     for(var key in postAddress){
         query["postAddress."+key] = postAddress[key];
@@ -107,6 +116,9 @@ Post.getMyPosts = function(endPost, userId, count, callback){
     if(!endPost){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }   
+    if(!count){
+        count = 10;
+    }
     post.find({userId : userId, _id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply').limit(count)
         .then((results)=>{
             callback(null, results);
@@ -199,6 +211,9 @@ Post.getPostDetail = function(postId, callback){
 Post.getReplies = function(endReply, postId, count, callback){
     if (!endReply){
         endReply = 0;
+    }
+    if (!count){
+        count = 20;
     }
     post.findOne({ _id : postId}, 'reply -_id')
         .slice('reply', [endReply, count])

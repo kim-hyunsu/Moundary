@@ -26,8 +26,9 @@ function newsList(req, res, next){
     console.log('get (get) request of /post');
     const endPost = req.query.endPost;
     const userId = req.query.userId;
+    const postCount = req.query.postCount;
 
-    Post.getPosts(endPost, userId, 60, (err, results)=>{
+    Post.getPosts(endPost, userId, postCount, (err, results)=>{
         if(err){
             return next(err);
         }
@@ -56,8 +57,9 @@ function myPostList(req, res, next){
     console.log('get (get) request of /post/mine');
     const endPost = req.query.endPost;
     const userId = req.query.userId;
+    const postCount = req.query.postCount;
 
-    Post.getMyPosts(endPost, userId, 60, (err, results)=>{
+    Post.getMyPosts(endPost, userId, postCount, (err, results)=>{
         if (err){
             return next(err);
         }

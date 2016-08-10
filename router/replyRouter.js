@@ -16,7 +16,8 @@ router.put('/reply/like', likeReply);
 function replyList(req, res, next){
     const postId = req.query.postId;
     const endPost = req.query.endPost;
-    Post.getReplies(endPost, postId, 20, (err, results)=>{
+    const replyCount = req.query.replyCount;
+    Post.getReplies(endPost, postId, replyCount, (err, results)=>{
         if (err){
             return next(err);
         }

@@ -24,14 +24,16 @@ function infoList(req, res, next){
     var postAddress = req.query;
     const category = postAddress.category;
     const endPost = postAddress.endPost;
+    const postCount = postAddress.postCount;
     const userId = req.query.userId;
     delete postAddress.category;
     delete postAddress.endPost;
     delete postAddress.userId;
+    delete postAddress.postCount;
 
     if (Object.keys(postAddress).length == 0){
         console.log('No postAddress querystring');
-        Post.getInfoPostsNearby(endPost, userId, category, 60, (err, results)=>{
+        Post.getInfoPostsNearby(endPost, userId, category, postCount, (err, results)=>{
             if (err){
                 return next(err);
             }
@@ -56,7 +58,7 @@ function infoList(req, res, next){
         });
     }
     else{
-        Post.getInfoPostsByAddress(endPost, postAddress, category, 60, (err, results)=>{
+        Post.getInfoPostsByAddress(endPost, postAddress, category, postCount, (err, results)=>{
             if (err){
                 return next(err);
             }
