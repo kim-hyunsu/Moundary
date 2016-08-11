@@ -30,11 +30,17 @@ Post.getPosts = function(endPost, userId, count, callback){
                 promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply').limit(count);
                 hasFriend = 0;
                 default:
-                promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply')
-                            .where('userId').in(friendList)
+                // promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply')
+                //             .where('userId').in(friendList)
+                //             .limit(count)
+                promise = post.aggregate().match({_id:{$lt: mongoose.Types.ObjectId(endPost)}}).project({myLike : {$cond :{if : {$setIntersection :['$postLikeUsers', [userId]]},then:true, else:false}}})
+                            // .where('userId').in(friendList)
                             .limit(count)
             }
-            promise.then((results)=>{
+            promise.sort({_id:-1}).then((results)=>{
+                console.log('=============RESULTS==============');
+                console.log(results);
+                console.log('==================================');
                 results.hasFriend = hasFriend;
                 callback(null, results);
             }, (err)=>{
@@ -73,7 +79,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
             promise = promise.where('category').ne(0);
         }
         console.log('CHECK PROMISE');
-        promise.limit(count)
+        promise.limit(count).sort({_id:-1}).lean()
             .then((result)=>{
                 console.log('POST FOUND >>>', result);
                 result.userAddress = userAddress;
@@ -103,7 +109,7 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
     if (!category){
         promise = promise.where('category').ne(0);
     }
-    promise.limit(count)
+    promise.limit(count).sort({_id:-1}).lean()
         .then((results)=>{
             callback(null, results);
         }, (err)=>{
@@ -119,7 +125,7 @@ Post.getMyPosts = function(endPost, userId, count, callback){
     if(!count){
         count = 10;
     }
-    post.find({userId : userId, _id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply').limit(count)
+    post.find({userId : userId, _id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply').limit(count).sort({_id:-1}).lean()
         .then((results)=>{
             callback(null, results);
         }, (err)=>{

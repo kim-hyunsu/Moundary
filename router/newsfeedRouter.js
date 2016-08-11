@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
+const async = require('async');
 const Post = require('../model/posts.js');
 const s3upload = require('./s3upload.js');
 
@@ -34,21 +35,39 @@ function newsList(req, res, next){
         }
         const hasFriend = results.hasFriend;
         delete results.hasFriend;
-        var data = {
-            msg : 'success',
-            hasFriend : hasFriend,
-            page : {
-                postCount : results.length
-            },
-            data : results
-        }
-        if (results.length ==0 ){
-            data.page.endPost = null;
-        }
-        else{
-            data.page.endPost = results[0]._id
-        }
-        res.json(data);
+        async.each(results, (ele, cb)=>{
+            const mongoose = require('mongoose');
+            console.log('BEFORE>>>', ele.myLike);
+            console.log('USERID', userId, typeof userId);
+            console.log('OBJECT USERID', mongoose.Types.ObjectId(userId), typeof mongoose.Types.ObjectId(userId));
+            console.log('POST LIKE USERS', ele.postLikeUsers[0], typeof ele.postLikeUsers[0]);
+            console.log('CHECK EQUALITY', mongoose.Types.ObjectId(userId)==ele.postLikeUsers[0]);
+            if (ele.postLikeUsers.indexOf(userId) == -1){
+                ele.myLike = false;
+            }
+            else {
+                ele.myLike = true;
+            }
+            delete ele.postLikeUsers;
+            console.log('AFTER>>>', ele.myLike);
+            cb();
+        }, (err)=>{
+            var data = {
+                msg : 'success',
+                hasFriend : hasFriend,
+                page : {
+                    postCount : results.length
+                },
+                data : results
+            }
+            if (results.length ==0 ){
+                data.page.endPost = null;
+            }
+            else{
+                data.page.endPost = results[results.length-1]._id
+            }
+            res.json(data);
+        });
     });
 }
 
@@ -63,20 +82,34 @@ function myPostList(req, res, next){
         if (err){
             return next(err);
         }
-        var data = {
-            msg : 'success',
-            page : {
-                postCount : results.length
-            },
-            data : results
-        }
-        if (results.length ==0 ){
-            data.page.endPost = null;
-        }
-        else{
-            data.page.endPost = results[0]._id
-        }
-        res.json(data);
+        async.each(results, (ele, cb)=>{
+            if (ele.postLikeUsers.indexOf(userId) == -1){
+                ele.myLike = false;
+            }
+            else {
+                ele.myLike = true;
+            }
+            delete ele.postLikeUsers;
+            cb();
+        }, (err)=>{
+            if (err){
+                return next(err);
+            }
+            var data = {
+                msg : 'success',
+                page : {
+                    postCount : results.length
+                },
+                data : results
+            }
+            if (results.length ==0 ){
+                data.page.endPost = null;
+            }
+            else{
+                data.page.endPost = results[results.length-1]._id
+            }
+            res.json(data);
+        });
     });
 }
 
@@ -154,7 +187,7 @@ function postDetail(req, res, next){
         }
         const data = {
             msg : 'success',
-            postInfo : results
+            data : results
         }
         res.json(data);
     });

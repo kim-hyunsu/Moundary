@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const Post = require('../model/posts.js');
-const s3upload = require('./s3upload.js');
 const pathUtil = require('path');
 const fs = require('fs');
-
+const async = require('async');
+const Post = require('../model/posts.js');
+const s3upload = require('./s3upload.js');
 // 동네소식 목록, 정보글 쓰기, 수정, 삭제
 router.route('/info')
     .get(infoList)
@@ -31,15 +31,26 @@ function infoList(req, res, next){
     delete postAddress.userId;
     delete postAddress.postCount;
 
-    if (Object.keys(postAddress).length == 0){
-        console.log('No postAddress querystring');
-        Post.getInfoPostsNearby(endPost, userId, category, postCount, (err, results)=>{
+    const callback = function(err, results){
+        if (err){
+            return next(err);
+        }
+        console.log('Got information of near by posts')
+        const myAddress = results.userAddress || null;
+        delete results.userAddress;
+        async.each(results, (ele, cb)=>{
+            if (ele.postLikeUsers.indexOf(userId) == -1){
+                ele.myLike = false;
+            }
+            else{
+                ele.myLike = true;
+            }
+            delete ele.postLikeUsers;
+            cb();
+        }, (err)=>{
             if (err){
                 return next(err);
             }
-            console.log('Got information of near by posts')
-            const myAddress = results.userAddress;
-            delete results.userAddress;
             var data = {
                 msg : 'success',
                 myAddress : myAddress,
@@ -52,32 +63,18 @@ function infoList(req, res, next){
                 data.page.endPost = null;
             }
             else{
-                data.page.endPost = results[0]._id
+                data.page.endPost = results[results.length-1]._id
             }
             res.json(data);
         });
     }
+
+    if (Object.keys(postAddress).length == 0){
+        console.log('No postAddress querystring');
+        Post.getInfoPostsNearby(endPost, userId, category, postCount, callback);
+    }
     else{
-        Post.getInfoPostsByAddress(endPost, postAddress, category, postCount, (err, results)=>{
-            if (err){
-                return next(err);
-            }
-            const data = {
-                msg : 'success',
-                myAddress : null,
-                page : {
-                    postCount : results.length
-                },
-                data : results
-            }
-            if (results.length ==0 ){
-                data.page.endPost = null;
-            }
-            else{
-                data.page.endPost = results[0]._id
-            }
-            res.json(data);
-        });
+        Post.getInfoPostsByAddress(endPost, postAddress, category, postCount, callback);
     }
 }
 
@@ -165,7 +162,7 @@ function infoDetail(req, res, next){
         }
         const data = {
             msg : 'success',
-            postInfo : results
+            data : results
         }
         res.json(data);
     });

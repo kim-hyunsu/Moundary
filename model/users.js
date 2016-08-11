@@ -15,16 +15,28 @@ User.getFriendCount = function(userId, callback){
 }
 
 // 친구 목록 얻기
-User.getFriends = function(userId, callback){
-    
+User.getFriends = function(endUser, userId, count, callback){
+    endUser = endUser || "ffce5eef0000000000000000";
+    count = count || 60;
+    user.findOne({_id : userId}, 'friendList -_id', (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        const friendList = result.friendList;
+        user.find({_id:{$in:friendList}}, 'nickname profileThumbnail userAddress baby')
+            .where('_id').lt(endUser).limit(count).sort({_id:-1})
+            .then((results)=>{
+                callback(null, results);
+            }, (err)=>{
+                callback(err, null);
+            });
+    });
 }
 
 // 유저 프로필 얻기
 User.getProfile = function(profileUserId, userId, callback){
-    user.findOne({_id: profileUserId}, 'profileImg coverImg nickname userAddress friendList')
+    user.findOne({_id: profileUserId}, 'profileImg coverImg nickname userAddress friendList').lean()
         .then((result)=>{
-            result = result.toObject();
-            console.log('USER FOUND >>>', result);
             if (result.friendList.indexOf(mongoose.Types.ObjectId(userId)) == -1){
                 // 친구 신청 중인지 아닌지 확인
                 console.log('NOT YET THE FRIEND');
@@ -36,8 +48,6 @@ User.getProfile = function(profileUserId, userId, callback){
                         console.log('NOT FRIEND');
                         //친구 요청 중도 아님=> 친구 아님
                         result.isFriend = -1;
-                        console.log('type :', typeof result);
-                        console.log('RESULT', result);
                     }
                     else{
                         console.log('WAITING TO PERMIT FRIEND REQUEST');
@@ -61,13 +71,13 @@ User.getProfile = function(profileUserId, userId, callback){
         });
 } 
 
-// 프로필 수정페이지에 아이 나이 띄워주기 위해 아이 나이만 가져오기
-User.getBabyAge = function(userId, callback){
-    user.findOne({_id: userId}, 'babyAge -_id', (err, result)=>{
+// 나의 프로필 페이지
+User.getMyProfile = function(userId, callback){
+    user.findOne({_id: userId}, 'profileImg coverImg nickname userAddress friendList baby', (err, result)=>{
         if (err){
             return callback(err, null);
         }
-        callback(null, result.babyAge);
+        callback(null, result);
     });
 }
 
@@ -144,7 +154,7 @@ User.getUsersByAddress = function(endUser, userAddress, ageRange, count, callbac
     }
     user.find(query, 'profileThumbnail nickname userAddress baby')
         .where('baby.$.babyAge').gte(min).lte(max)
-        .limit(count)
+        .limit(count).sort({_id:-1}).lean()
         .then( (results)=>{
             async.each(results, (ele, cb)=>{
                 holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{

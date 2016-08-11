@@ -16,12 +16,7 @@ Holder.apply = function(userId, oppositeUserId, callback){
     holder.create({
         requestUserId : userId,
         responseUserId : oppositeUserId
-    }, (err, result)=>{
-        if (err){
-            return callback(err, null);
-        }
-        callback(null, result);
-    });
+    }, callback);
 }
 
 // 친구 신청취소
@@ -29,12 +24,7 @@ Holder.cancel = function(userId, oppositeUserId, callback){
     holder.remove({
         requestUserId : userId,
         responseUserId : oppositeUserId
-    }, (err, result)=>{
-        if (err){
-            return callback(err, null);
-        }
-        callback(null, result);
-    })
+    }, callback);
 }
 
 //친구 수락
@@ -44,18 +34,21 @@ Holder.allow = function(userId, oppositeUserId, callback){
         requestUserId : userId,
         responseUserId : oppositeUserId
     }, (err, result)=>{
+        // fail to remove
         if (err){
             error = 'failToRemove';
             console.log('FAIL TO REMOVE RELATION BETWEEN %s AND %s FROM THE holds COLLECTION', userId, oppositeUserId);
         }
+        // success to remove
         async.parallel([
-            function(cb){
+            function(cb){ // add oppositeUserId for friend
                 user.update({_id:userId},{$push:{friendList:oppositeUserId}}, cb);
             },
-            function(cb){
+            function(cb){ // add userId for friend
                 user.update({_id:oppositeUserId},{$push:{friendList : userId}}, cb);
             }
         ], (err, result)=>{
+            // At least one of addition failed, remove the addicted friend
             if (err){
                 var errHandlers = [
                     function(cb){
@@ -65,6 +58,7 @@ Holder.allow = function(userId, oppositeUserId, callback){
                         user.update({_id:oppositeUserId}, {$pull:{friendList:userId}}, cb);
                     }
                 ]
+                // in the case of failing to delete, repair to hold on the friendship between userId and oppositeUserId
                 if (error == 'failToRemove'){
                     errHandlers.push(
                         function(cb){
@@ -75,6 +69,7 @@ Holder.allow = function(userId, oppositeUserId, callback){
                         }
                     )
                 }
+                // excute the restorations above
                 async.parallel(errHandlers, (err, result)=>{
                     if (err){
                         console.log('FAIL TO DISPOSE OF A NEW RELATION BETWEEN %s AND %s', userId, oppositeUserId);
@@ -93,17 +88,37 @@ Holder.reject = function(userId, oppositeUserId, callback){
     holder.remove({
         requestUserId : oppositeUserId,  // 친구 신청 취소와 반대
         responseUserId : userId
-    }, (err, result)=>{
-        if (err){
-            return callback(err, null);
-        }
-        callback(null, result);
-    })
+    }, callback);
 }
 
 // 친구 삭제
 Holder.delete = function(userId, oppositeUserId, callback){
-    
+    async.parallel([
+        function(cb){
+            user.update({_id : userId}, {$pull : {friendList : oppositeUserId}}, cb);
+        },
+        function(cb){
+            user.update({_id : oppositeUserId}, {$pull : {friendList : userId}}, cb);
+        }
+    ], (err, result)=>{
+        if (err){
+            async.parallel([
+                function(cb){
+                    user.update({_id : userId}, {$push : {friendList : oppositeUserId}},{upsert : true}, cb);
+                },
+                function(cb){
+                    user.update({_id : oppositeUserId}, {$push : {friendList : userId}}, {upsert : true}, cb);
+                }
+            ], (err , results)=>{
+                if (err){
+                    console.log('FAIL TO REPAIR A FRIENDSHIP BETWEEN %s AND %s', userId, oppositeUserId);
+                }
+                console.log('FAIL TO DELETE A FRIENDSHIP BETWEEN %s AND %s', userId, oppositeUserId);
+                callback(err, null);
+            });
+        }
+        callback(null, result);
+    });
 }
 
 module.exports = Holder;
