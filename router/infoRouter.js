@@ -45,7 +45,7 @@ function infoList(req, res, next){
             else{
                 ele.myLike = true;
             }
-            delete ele.postLikeUsers;
+            // delete ele.postLikeUsers;
             cb();
         }, (err)=>{
             if (err){

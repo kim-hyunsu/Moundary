@@ -48,7 +48,7 @@ function newsList(req, res, next){
             else {
                 ele.myLike = true;
             }
-            delete ele.postLikeUsers;
+            // delete ele.postLikeUsers;
             console.log('AFTER>>>', ele.myLike);
             cb();
         }, (err)=>{
@@ -89,7 +89,7 @@ function myPostList(req, res, next){
             else {
                 ele.myLike = true;
             }
-            delete ele.postLikeUsers;
+            // delete ele.postLikeUsers;
             cb();
         }, (err)=>{
             if (err){
