@@ -30,14 +30,11 @@ Post.getPosts = function(endPost, userId, count, callback){
                 promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply').limit(count);
                 hasFriend = 0;
                 default:
-                // promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply')
-                //             .where('userId').in(friendList)
-                //             .limit(count)
-                promise = post.aggregate().match({_id:{$lt: mongoose.Types.ObjectId(endPost)}}).project({myLike : {$cond :{if : {$setIntersection :['$postLikeUsers', [userId]]},then:true, else:false}}})
-                            // .where('userId').in(friendList)
+                promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply')
+                            .where('userId').in(friendList)
                             .limit(count)
             }
-            promise.sort({_id:-1}).then((results)=>{
+            promise.sort({_id:-1}).lean().then((results)=>{
                 console.log('=============RESULTS==============');
                 console.log(results);
                 console.log('==================================');
