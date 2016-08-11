@@ -196,6 +196,7 @@ function modifyProfile(req, res, next){
             res.json(data);
         });
     });
+}
 
 
 function userList(req, res, next){
