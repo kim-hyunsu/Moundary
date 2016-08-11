@@ -121,4 +121,16 @@ Holder.delete = function(userId, oppositeUserId, callback){
     });
 }
 
+Holder.getFriendCandidates = function(userId, callback){
+    user.aggregate()
+        .lookup({from : 'holds', localField : '_id', foreignField : 'requestUserId', as : 'requestUser'})
+        .match({'requestUser.$.responseUserId' : userId})
+        .project('nickname profileThumbnail')
+        .then((result)=>{
+            callback(null, result);
+        }, (err)=>{
+            callback(err, null);
+        });
+}
+
 module.exports = Holder;

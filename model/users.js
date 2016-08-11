@@ -9,11 +9,6 @@ const user = mongoose.model('user', userSchema);
 const holder = mongoose.model('hold', holderSchema);
 class User{}
 
-// 친구 수 얻기
-User.getFriendCount = function(userId, callback){
-
-}
-
 // 친구 목록 얻기
 User.getFriends = function(endUser, userId, count, callback){
     endUser = endUser || "ffce5eef0000000000000000";
@@ -143,60 +138,89 @@ function ageRangeSwitch(ageRange){
 }
 
 // 해당 주소에 있는 사용자들 불러오기
-User.getUsersByAddress = function(endUser, userAddress, ageRange, count, callback){
-    if(!count){
-        count = 60;
-    }
-    var min, max = ageRangeSwitch(ageRange);
-    var query = {};
-    for(var key in userAddress){
-        query['userAddress.'+key] = userAddress[key];
-    }
-    user.find(query, 'profileThumbnail nickname userAddress baby')
-        .where('baby.$.babyAge').gte(min).lte(max)
-        .limit(count).sort({_id:-1}).lean()
-        .then( (results)=>{
-            async.each(results, (ele, cb)=>{
-                holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
-                    if (count == 0){
-                        ele.isRequestUser = false;
-                    }
-                    else{
-                        ele.isRequestUser = true;
-                    }
-                    cb()
-                });
-            }, (err)=>{
-                if (err){
-                    return callback(err, null);
-                }
-                callback(null, results);
-            });
-        }, (err)=>{
-            callback(err, null);
-        });
-}
+User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count, callback){
+    //default values
+    endUser = endUser || "ffce5eef0000000000000000";
+    count = count || 60;
 
-// 사용자 주변 사용자들 불러오기
-User.getUsersNearby = function(endUser, userId, ageRange, count, callback){ //TODO - ageRange, count 고려하고 결과에 isRequestUser 넣기
-    if(!endUser){
-        endUser = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-    }   
-    if(!count){
-        count = 60;
-    }
-    user.findOne({_id : userId}, 'userAddress babyAge -_id', (err, result)=>{
+    user.findOne({_id:userId}, 'friendList -_id', (err, result)=>{
         if (err){
             return callback(err, null);
         }
+        var min, max = ageRangeSwitch(ageRange);
+        var query = {};
+        for(var key in userAddress){
+            query['userAddress.'+key] = userAddress[key];
+        }
+        user.find(query, 'profileThumbnail nickname userAddress baby')
+            .where('baby.$.babyAge').gte(min).lte(max)
+            .where('_id').nin(result.friendList)
+            .limit(count).sort({_id:-1}).lean()
+            .then( (results)=>{
+                async.each(results, (ele, cb)=>{
+                    holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
+                        if (count == 0){
+                            ele.isRequestUser = false;
+                        }
+                        else{
+                            ele.isRequestUser = true;
+                        }
+                        cb()
+                    });
+                }, (err)=>{
+                    if (err){
+                        return callback(err, null);
+                    }
+                    callback(null, results);
+                });
+            }, (err)=>{
+                callback(err, null);
+            });        
+    });
+
+}
+
+// 사용자 주변 사용자들 불러오기
+User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
+    //default values
+    endUser = endUser || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59   
+    count = count || 60;
+
+    user.findOne({_id : userId}, 'userAddress babyAge friendList -_id', (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        var min, max = ageRangeSwitch(ageRange);
+        var query = {};
         var userAddress = result.userAddress;
         delete userAddress.area5;  //상세지역은 빼도 '동'까지만 검색
-        User.getUsersByAddress(endUser, userAddress, ageRange, count, (err, results)=>{
-            if (err){
-                return callback(err, null);
-            }
-            callback(null, results)
-        });
+        for(var key in userAddress){
+            query['userAddress.'+key] = userAddress[key];
+        }
+        user.find(query, 'profileThumbnail nickname userAddress baby')
+            .where('baby.$.babyAge').gte(min).lte(max)
+            .where('_id').nin(result.friendList)
+            .limit(count).sort({_id:-1}).lean()
+            .then( (results)=>{
+                async.each(results, (ele, cb)=>{
+                    holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
+                        if (count == 0){
+                            ele.isRequestUser = false;
+                        }
+                        else{
+                            ele.isRequestUser = true;
+                        }
+                        cb()
+                    });
+                }, (err)=>{
+                    if (err){
+                        return callback(err, null);
+                    }
+                    callback(null, results);
+                });
+            }, (err)=>{
+                callback(err, null);
+            });
     });
 }
 

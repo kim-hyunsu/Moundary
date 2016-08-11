@@ -34,7 +34,18 @@ function searchUsers(req, res, next){
 }
 
 function friendCandidates(req, res, next){
+    const userId = req.query.userId;
 
+    Holder.getFriendCandidates(userId, (err, result)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : result
+        }
+        res.json(data);
+    });
 }
 
 function friendList(req, res, next){
@@ -237,7 +248,7 @@ function userList(req, res, next){
         User.getUsersNearby(endUser, userId, ageRange, count, cb);
     }
     else{
-        User.getUsersByAddress(endUser, userId, ageRange, count, cb);
+        User.getUsersByAddress(endUser, userId, address, ageRange, count, cb);
     }
 
 }
