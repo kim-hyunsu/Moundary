@@ -91,4 +91,18 @@ s3upload.thumbnail = function(imagePath, imageType, folder, userId, callback){
         });
     }
 
+// s3 이미지 파일 삭제
+s3upload.delete = function(url, callback){
+    const params = {
+        Bucket : bucketName,
+        Key : url
+    }
+    s3.deleteObject(params, (err, data)=>{
+        if (err){
+            return callback(err, null);
+        }
+        callback(null,null);
+    })
+}
+
 module.exports = s3upload;

@@ -59,7 +59,7 @@ function signup(req, res, next){
             }
             const data ={
                 msg : 'success',
-                userId : result
+                userId : result._id
             }
             res.json(data);
         });

@@ -88,29 +88,23 @@ User.createUser = function(userInfo, callback){
 }
 
 // userInfo에 객체로 유저 정보를 입력하면 해당 정보 저장
-User.updateUser = function(userId, userInfo, callback){
-    user.update({_id : userId}, userInfo, {upsert : true},(err, result)=>{
+User.updateUser = function(userId, userInfo, callback, needPrevImgUrl=false){
+    user.findOneAndUpdate({_id : userId}, userInfo, {upsert : true, fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
         if (err){
             return callback(err, null);
         }
-        userInfo._id = result._id;
-        callback(null, userInfo);
+        callback(null, result);
     });
 }
 
 // 아이 나이 수정
 User.updateBabyAge = function(userId, babyId, babyAge, callback){
-    user.update({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, (err, result)=>{
+    user.findOneAndUpdate({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, {fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
         if (err){
             return callback(err, null);
         }
-        const baby = {
-            _id : babyId,
-            babyAge : babyAge
-        }
-        callback(null, baby);
+        callback(null, result);
     });
-    // 넘겨줄거 제대로 정하기
 }
 
 // ageRange 코드 값에 따라 알맞은 생년월일 범위 반환

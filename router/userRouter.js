@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const async = require('async');
+const fs = require('fs');
 const User = require('../model/users.js');
 const Post = require('../model/posts.js');
 const Holder = require('../model/friendsHold.js');
@@ -98,115 +99,144 @@ function myProfile(req, res, next){
 function modifyProfile(req, res, next){
     const now = new Date();
     const userId = req.query.userId;
-    const updateCode = req.body.updateCode;
     var query; // 수정할 정보를 담을 query
-    async.each(updateCode, (ele, cb)=>{
-        switch(ele){
-            case 1: // 커버 이미지 수정
-            const coverImg = req.body.coverImg;
-            s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, imageUrl)=>{
-                if (err){
-                    return cb(err);
-                }
-                query = {
-                    coverImg : coverImg
-                }
-                User.updateUser(userId, query, cb);
-            });
 
-            case 2: //프로필 이미지 수정
-            const profileImg = req.body.profileImg;
-            const profilePath = profileImg.path;
-            // s3에 원본 이미지 업로드
-            s3upload.original(profilePath, profileImg.type, 'profileImg', userId, (err, imageUrl)=>{
+    const cb = function(err, result){
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : result
+        }
+        res.json(data);
+    }
+
+    //커버사진 수정
+    const coverImg = req.body.coverImg;
+    if (coverImg){
+        s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, imageUrl)=>{
+            if (err){
+                return cb(err);
+            }
+            query = {
+                coverImg : imageUrl
+            }
+            User.updateUser(userId, query, cb);
+            fs.unlink(coverImg.path, (err)=>{
+                if (err){
+                    console.log('FAIL TO DELETE A NEW COVER IMAGE >>>', coverImg.path);
+                }
+                else{
+                    console.log('A NEW COVER IMAGE DELETED');
+                }
+            });
+        });
+    } else {
+        // 커버사진 삭제
+    }
+
+    //프로필 수정
+    const profileImg = req.body.profileImg;
+    if (profileImg){
+        const profilePath = profileImg.path;
+        // s3에 원본 이미지 업로드
+        s3upload.original(profilePath, profileImg.type, 'profileImg', userId, (err, imageUrl)=>{
+            if (err){
+                return cb(err);
+            }
+            // 썸네일 이미지 변환후 s3에 이미지 업로드
+            s3upload.thumbnail(profilePath, profileImg.type, 'profileThumbnail', userId, (err, thumbnailUrl)=>{
                 if (err){
                     return cb(err);
                 }
-                // 썸네일 이미지 변환후 s3에 이미지 업로드
-                s3upload.thumbnail(profilePath, profileImg.type, 'profileThumbnail', userId, (err, thumbnailUrl)=>{
+                // 유저 정보에서 프로필 이미지 url 수정
+                query = {
+                    profileImg : imageUrl,
+                    profileThumbnail : thumbnailUrl
+                }
+                User.updateUser(userId, query, (err, updatedUser)=>{
                     if (err){
                         return cb(err);
                     }
-                    // 유저 정보에서 프로필 이미지 url 수정
-                    query = {
-                        profileImg : imageUrl,
+                    // 유저가 쓴 모든 글과 댓글들에서 프로필썸네일 url 수정
+                    const queryForPost = {
                         profileThumbnail : thumbnailUrl
                     }
-                    User.updateUser(userId, query, (err, updatedUser)=>{
-                        if (err){
-                            return cb(err);
-                        }
-                        // 유저가 쓴 모든 글과 댓글들에서 프로필썸네일 url 수정
-                        const queryForPost = {
-                            profileThumbnail : thumbnailUrl
-                        }
-                        Post.updatePostUserInfo(userId, queryForPost, (err, results)=>{
-                            cb(err, updatedUser);
-                            // 임시 폴더에 있는 이미지 모두 삭제
-                            fs.unlink(profilePath, (err)=>{
+                    Post.updatePostUserInfo(userId, queryForPost, (err, results)=>{
+                        cb(err, updatedUser);
+                        // 임시 폴더에 있는 이미지 모두 삭제
+                        fs.unlink(profilePath, (err)=>{
+                            if (err){
+                                console.log('Fail to delete a temporary file >>>', profilePath);
+                            }
+                            else{
+                                console.log('Removed the temporary image of the post');
+                            }
+                            const thumbnailPath = __dirname+'/../upload' + 'thumb_'+pathUtil.basename(profilePath);
+                            fs.unlink(thumbnailPath, (err)=>{
                                 if (err){
-                                    console.log('Fail to delete a temporary file >>>', profilePath);
+                                    console.log('Fail to delete a temporary file >>>', thumbnailPath);
                                 }
                                 else{
                                     console.log('Removed the temporary image of the post');
                                 }
-                                const thumbnailPath = __dirname+'/../upload' + 'thumb_'+pathUtil.basename(profilePath);
-                                fs.unlink(thumbnailPath, (err)=>{
-                                    if (err){
-                                        console.log('Fail to delete a temporary file >>>', thumbnailPath);
-                                    }
-                                    else{
-                                        console.log('Removed the temporary image of the post');
-                                    }
-                                });
                             });
                         });
                     });
                 });
             });
-
-            case 3: // 닉네임 수정
-            query = {
-                nickname : req.body.nickname
-            }
-            User.updateUser(userId, query, (err, updatedUser)=>{
-                if (err){
-                    return cb(err);
-                }
-                User.updatePostUserInfo(userId, query, cb);
-            });
-
-            case 4: // 주소수정
-            query = {
-                userAddress : req.body.address
-            }
-            User.updateUser(userId, query, cb);
-
-            case 6: // 아이 생년월일 수정
-            const babyId = req.body.babyId;
-            const age = req.body.babyAge;
-            var babyAge = new Date();
-            babyAge.setFullYear(parseInt(age.substring(0,4)));
-            babyAge.setMonth(parseInt(age.substring(5,6))-1);
-            babyAge.setDate(parseInt(age.substring(7,8)));
-            User.updateBabyAge(userId, babyId, babyAge, cb);
-
-            case 5: // 아이 추가
-            query = { $push : { baby : { babyAge : req.body.addBaby } } }
-            User.updateUser(userId, query, cb);
-        }
-    }, (err, updatedUser)=>{
-        if (err){
-            return next(err);
-        }
-        User.getMyProfile(userId, (err, results)=>{
-            const data = {
-                msg : 'success',
-                data : results
-            }
-            res.json(data);
         });
-    });
+    } else {
+        //삭제
+    }
+
+    // 닉네임 수정
+    const nickname = req.body.nickname;
+    if (nickname){
+        query = {
+            nickname : req.body.nickname
+        }
+        User.updateUser(userId, query, (err, updatedUser)=>{
+            if (err){
+                return cb(err);
+            }
+            User.updatePostUserInfo(userId, query, cb);
+        });
+    }
+
+    // 주소 수정
+    const address = {
+        area1 : req.body.area1,
+        area2 : req.body.area2,
+        area3 : req.body.area3,
+        area4 : req.body.area4,
+        area5 : req.body.area5
+    }
+    if ( address.area1 || address.area2 || address.area3 || address.area4 || address.area5 ){
+            query = {
+                userAddress : address
+            }
+            User.updateUser(userId, query, cb);
+    }
+
+    // 아이 생년월일 수정
+    const babyId = req.body.babyId;
+    const age = req.body.babyAge;
+    if (babyId && age){
+        var babyAge = new Date();
+        babyAge.setFullYear(parseInt(age.substring(0,4)));
+        babyAge.setMonth(parseInt(age.substring(5,6))-1);
+        babyAge.setDate(parseInt(age.substring(7,8)));
+        User.updateBabyAge(userId, babyId, babyAge, cb);
+    }
+
+    // 아이 추가
+    const addbaby = req.body.addBaby;
+    if (addbaby){
+        query = { $push : { baby : { babyAge : addbaby } } }
+        User.updateUser(userId, query, cb);
+    }
 }
 
 

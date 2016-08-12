@@ -43,7 +43,8 @@ app.use(bodyParser.urlencoded({extended:false})); // transmit with urlencoded
 app.use(formidable.parse({ // and multipart
     encoding : 'utf-8',
     uploadDir : __dirname + '/upload',
-    keepExtensions : true
+    keepExtensions : true,
+    multiples : true
 })); 
 app.use(loginRouter);
 app.use(newsfeedRouter);

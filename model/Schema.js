@@ -71,7 +71,7 @@ module.exports.user = userSchema;
 const holderSchema =  Schema({
     requestUserId : { type : Schema.Types.ObjectId, ref : 'user'},
     responseUserId : {type : Schema.Types.ObjectId, ref : 'user'},
-    requestDate : {type : Date, ref: Date.now}
+    requestDate : {type : Date, default: Date.now}
 });
 
 module.exports.holder = holderSchema;

@@ -14,8 +14,8 @@ class Holder{}
 // 친구 신청, [userId=>requestUser], [oppositeUserId=>responseUser]
 Holder.apply = function(userId, oppositeUserId, callback){
     log('5');
-    holder.create({
-        requestUserId : userId,
+    holder.create({ // todo-같은 요청이 두번 올 때 겹치는 문제 고려
+        requestUserId : userId, 
         responseUserId : oppositeUserId
     }, (err, result)=>{
         if (err){
@@ -38,8 +38,8 @@ Holder.cancel = function(userId, oppositeUserId, callback){
 Holder.allow = function(userId, oppositeUserId, callback){
     var error;
     holder.remove({
-        requestUserId : userId,
-        responseUserId : oppositeUserId
+        requestUserId : oppositeUserId,
+        responseUserId : userId
     }, (err, result)=>{
         // fail to remove
         if (err){
@@ -131,7 +131,8 @@ Holder.delete = function(userId, oppositeUserId, callback){
 Holder.getFriendCandidates = function(userId, callback){
     user.aggregate()
         .lookup({from : 'holds', localField : '_id', foreignField : 'requestUserId', as : 'requestUser'})
-        .match({'requestUser.$.responseUserId' : userId})
+        .unwind('requestUser')
+        .match({'requestUser.responseUserId' : mongoose.Types.ObjectId(userId)})
         .project('nickname profileThumbnail')
         .then((result)=>{
             callback(null, result);
