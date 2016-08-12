@@ -235,7 +235,7 @@ function userList(req, res, next){
             },
             data : result
         }
-        if (data.userCount ==0){ //해당 지역에 사람이 아무도 없다면
+        if (result.length ==0){ //해당 지역에 사람이 아무도 없다면
             data.page.endUser = null;
         }
         else{
@@ -245,10 +245,10 @@ function userList(req, res, next){
     }
 
     if ( !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 ){ //주소입력이 없다면 유저가 속한 동/읍/면에서 탐색
-        User.getUsersNearby(endUser, userId, ageRange, count, cb);
+        User.getUsersNearby(endUser, userId, ageRange, userCount, cb);
     }
     else{
-        User.getUsersByAddress(endUser, userId, address, ageRange, count, cb);
+        User.getUsersByAddress(endUser, userId, address, ageRange, userCount, cb);
     }
 
 }

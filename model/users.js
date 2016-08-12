@@ -9,6 +9,7 @@ const user = mongoose.model('user', userSchema);
 const holder = mongoose.model('hold', holderSchema);
 class User{}
 
+const log = console.log;
 // 친구 목록 얻기
 User.getFriends = function(endUser, userId, count, callback){
     endUser = endUser || "ffce5eef0000000000000000";
@@ -142,7 +143,6 @@ User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count,
     //default values
     endUser = endUser || "ffce5eef0000000000000000";
     count = count || 60;
-
     user.findOne({_id:userId}, 'friendList -_id', (err, result)=>{
         if (err){
             return callback(err, null);
@@ -185,14 +185,13 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
     //default values
     endUser = endUser || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59   
     count = count || 60;
-
     user.findOne({_id : userId}, 'userAddress babyAge friendList -_id', (err, result)=>{
         if (err){
             return callback(err, null);
         }
         var min, max = ageRangeSwitch(ageRange);
         var query = {};
-        var userAddress = result.userAddress;
+        var userAddress = result.userAddress.toObject();
         delete userAddress.area5;  //상세지역은 빼도 '동'까지만 검색
         for(var key in userAddress){
             query['userAddress.'+key] = userAddress[key];
