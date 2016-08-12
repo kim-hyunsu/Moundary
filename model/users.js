@@ -120,22 +120,30 @@ function ageRangeSwitch(ageRange){
     switch(ageRange){
         case 1: // 0에서 3개월
         min.setMonth(min.getMonth()-4);
+        break
         case 2: // 4에서 12개월
         max.setMonth(max.getMonth()-4);
         min.setMonth(min.getMonth()-12);
+        break
         case 3: // 2에서 4세
         max.setMonth(max.getMonth()-12);
         min = new Date(min.getFullYear()-3, 0, 0, 0, 0, 0, 0);
+        break
         case 4: // 5에서 7세
         max = new Date(max.getFullYear()-3, 0, 0, 0, 0, 0, 0);
         min = new Date(min.getFullYear()-6, 0, 0, 0, 0, 0, 0);
+        break
         case 5: // 7세 이상
         max = new Date(max.getFullYear()-6, 0, 0, 0, 0, 0, 0);
         min = new Date(min.getFullYear()-19, 0, 0, 0, 0, 0, 0);
+        break
         default: // no ageRange input
         min = new Date(min.getFullYear()-19, 0, 0, 0, 0, 0, 0);
+        break
     }
-    return min, max;
+    log('MIN>>>', min);
+    log('MAX>>>', max);
+    return [min, max];
 }
 
 // 해당 주소에 있는 사용자들 불러오기
@@ -147,7 +155,7 @@ User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count,
         if (err){
             return callback(err, null);
         }
-        var min, max = ageRangeSwitch(ageRange);
+        var [min, max] = ageRangeSwitch(ageRange);
         var query = {};
         for(var key in userAddress){
             query['userAddress.'+key] = userAddress[key];
@@ -189,25 +197,28 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
         if (err){
             return callback(err, null);
         }
-        var min, max = ageRangeSwitch(ageRange);
+        var [min, max] = ageRangeSwitch(ageRange);
         var query = {};
+        log('ageRange min:%s, max :%s >>>', min,max);
+        log('userAddress >>>', result.userAddress)
         var userAddress = result.userAddress.toObject();
-        delete userAddress.area5;  //상세지역은 빼도 '동'까지만 검색
+        delete userAddress.area5;  //상세지역은 빼고 '동'까지만 검색
         for(var key in userAddress){
             query['userAddress.'+key] = userAddress[key];
         }
+        log('query >>>', query);
         user.find(query, 'profileThumbnail nickname userAddress baby')
-            .where('baby.$.babyAge').gte(min).lte(max)
+            .where('baby.babyAge').gte(min).lte(max)
             .where('_id').nin(result.friendList)
             .limit(count).sort({_id:-1}).lean()
             .then( (results)=>{
                 async.each(results, (ele, cb)=>{
                     holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
                         if (count == 0){
-                            ele.isRequestUser = false;
+                            ele.isRequestedUser = false;
                         }
                         else{
-                            ele.isRequestUser = true;
+                            ele.isRequestedUser = true;
                         }
                         cb()
                     });

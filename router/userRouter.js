@@ -5,7 +5,7 @@ const User = require('../model/users.js');
 const Post = require('../model/posts.js');
 const Holder = require('../model/friendsHold.js');
 const s3upload = require('./s3upload.js');
-
+const log = console.log;
 // 프로필 페이지, 프로필 수정
 router.route('/user')
     .get(profile)
@@ -26,7 +26,7 @@ router.get('/friend', friendList);
 // 친구 신청 목록 가져오기
 router.get('/friend/candidate', friendCandidates)
 
-// 친구 신청/취소/수락/거절
+// 친구 신청/취소/수락/거절/삭제
 router.put('/friend/:request', requestFriend)
 
 function searchUsers(req, res, next){
@@ -219,7 +219,7 @@ function userList(req, res, next){
         area4 : req.query.area4,
         area5 : req.query.area5
     }
-    const ageRange = req.query.ageRange;
+    const ageRange = parseInt(req.query.ageRange);
     const endUser = req.query.endUser;
     const userCount = req.query.userCount;
 
@@ -229,7 +229,7 @@ function userList(req, res, next){
         }
         var data = {
             msg : 'success',
-            myAddress : null,
+            myAddress : address,
             page : {
                 userCount : result.length
             },
@@ -243,8 +243,9 @@ function userList(req, res, next){
         }
         res.json(data);
     }
-
+    console.log('address', address);
     if ( !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 ){ //주소입력이 없다면 유저가 속한 동/읍/면에서 탐색
+        console.log('GETUSERSNEARBY');
         User.getUsersNearby(endUser, userId, ageRange, userCount, cb);
     }
     else{
@@ -255,28 +256,37 @@ function userList(req, res, next){
 
 function requestFriend(req, res, next){
     const userId = req.query.userId;
-    const oppositeUserId = req.body.userId;
+    const oppositeUserId = req.body.oppositeUserId;
+    log('1');
     const cb = function(err, result){
         if (err){
             return next(err);
         }
+        log('2');
         res.json( { msg : 'success' } );
     }
+    log('3');
     switch(req.params.request){
         case 'apply': // 친구 신청
+        log('4');
         Holder.apply(userId, oppositeUserId, cb);
+        break
 
         case 'cancel': // 친구 취소
         Holder.cancel(userId, oppositeUserId, cb);
+        break
 
         case 'allow': // 친구 수락
         Holder.allow(userId, oppositeUserId, cb);
+        break
 
         case 'reject': // 친구 거절
         Holder.reject(userId, oppositeUserId, cb);
+        break
 
         case 'delete': // 친구 삭제
         Holder.delete(userId, oppositeUserId, cb);
+        break
     }
 }
 

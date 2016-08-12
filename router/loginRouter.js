@@ -46,12 +46,12 @@ function signup(req, res, next){
             }],
 
         }
-        if (policyAgreeDate){
-            query.policyAgreeDate = req.body.policyAgreeDate
-        }
-        if (personalInfoAgreeDate){
-            query.personalInfoAgreeDate = req.body.personalInfoAgreeDate
-        }
+        // if (req.body.policyAgreeDate){
+        //     query.policyAgreeDate = req.body.policyAgreeDate;
+        // }
+        // if (req.body.personalInfoAgreeDate){
+        //     query.personalInfoAgreeDate = req.body.personalInfoAgreeDate;
+        // }
         console.log(userId);
         User.updateUser(userId, query, (err, result)=>{
             if (err){

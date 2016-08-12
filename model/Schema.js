@@ -69,7 +69,6 @@ const userSchema = Schema({
 module.exports.user = userSchema;
 
 const holderSchema =  Schema({
-    _id : Schema.Types.ObjectId,
     requestUserId : { type : Schema.Types.ObjectId, ref : 'user'},
     responseUserId : {type : Schema.Types.ObjectId, ref : 'user'},
     requestDate : {type : Date, ref: Date.now}

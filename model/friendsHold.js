@@ -7,16 +7,23 @@ const holderSchema = require('./Schema.js').holder;
 const userSchema = require('./Schema.js').user;
 const holder = mongoose.model('hold', holderSchema);
 const user = mongoose.model('user', userSchema);
-
+const log =console.log;
 class Holder{}
 
 
 // 친구 신청, [userId=>requestUser], [oppositeUserId=>responseUser]
 Holder.apply = function(userId, oppositeUserId, callback){
+    log('5');
     holder.create({
         requestUserId : userId,
         responseUserId : oppositeUserId
-    }, callback);
+    }, (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        log('6');
+        callback(null, result);
+    });
 }
 
 // 친구 신청취소
