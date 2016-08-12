@@ -67,6 +67,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         for(var key in userAddress){
             query["postAddress."+key] = userAddress[key];
         }
+        delete query['postAddress.area5'];
         if (category){
             query.category = category;
         }

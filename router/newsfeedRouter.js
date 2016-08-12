@@ -195,7 +195,11 @@ function postDetail(req, res, next){
 
 
 function modifyPost(req, res, next){
-
+    const userId = req.query.userId;
+    const postId = req.body.postId;
+    const postContent = req.body.postContent;
+    const postImg = req.body.postImg;
+    
 }
 
 function deletePost(req, res, next){
