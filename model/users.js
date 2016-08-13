@@ -88,8 +88,8 @@ User.createUser = function(userInfo, callback){
 }
 
 // userInfo에 객체로 유저 정보를 입력하면 해당 정보 저장
-User.updateUser = function(userId, userInfo, callback, needPrevImgUrl=false){
-    user.findOneAndUpdate({_id : userId}, userInfo, {upsert : true, fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
+User.updateUser = function(userId, userInfo, callback){
+    user.findOneAndUpdate({_id : userId}, userInfo, {new : true, upsert : true, fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
         if (err){
             return callback(err, null);
         }
@@ -99,7 +99,7 @@ User.updateUser = function(userId, userInfo, callback, needPrevImgUrl=false){
 
 // 아이 나이 수정
 User.updateBabyAge = function(userId, babyId, babyAge, callback){
-    user.findOneAndUpdate({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, {fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
+    user.findOneAndUpdate({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, {new : true, fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
         if (err){
             return callback(err, null);
         }
@@ -225,6 +225,16 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
             }, (err)=>{
                 callback(err, null);
             });
+    });
+}
+
+// 이미지 삭제를 위해 기존 이미지 url 얻기
+User.getImageUrl = function(what, userId, callback){
+    user.findOne({_id : userId}, what, (err, doc)=>{
+        if (err){
+            return callback(err, null);
+        }
+        callback(null, doc);
     });
 }
 

@@ -52,7 +52,7 @@ function friendCandidates(req, res, next){
 function friendList(req, res, next){
     const userId = req.query.userId;
     const endUser = req.query.endUser;
-    const userCount = req.query.userCount;
+    const userCount = parseInt(req.query.userCount);
     User.getFriends(endUser, userId, userCount, (err, result)=>{
         if (err){
             return next(err);
@@ -101,7 +101,7 @@ function modifyProfile(req, res, next){
     const userId = req.query.userId;
     var query; // 수정할 정보를 담을 query
 
-    const cb = function(err, result){
+    const callback = function(err, result){
         if (err){
             return next(err);
         }
@@ -111,132 +111,263 @@ function modifyProfile(req, res, next){
         }
         res.json(data);
     }
-
-    //커버사진 수정
-    const coverImg = req.body.coverImg;
-    if (coverImg){
-        s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, imageUrl)=>{
-            if (err){
-                return cb(err);
-            }
-            query = {
-                coverImg : imageUrl
-            }
-            User.updateUser(userId, query, cb);
-            fs.unlink(coverImg.path, (err)=>{
-                if (err){
-                    console.log('FAIL TO DELETE A NEW COVER IMAGE >>>', coverImg.path);
-                }
-                else{
-                    console.log('A NEW COVER IMAGE DELETED');
-                }
-            });
-        });
-    } else {
-        // 커버사진 삭제
-    }
-
-    //프로필 수정
-    const profileImg = req.body.profileImg;
-    if (profileImg){
-        const profilePath = profileImg.path;
-        // s3에 원본 이미지 업로드
-        s3upload.original(profilePath, profileImg.type, 'profileImg', userId, (err, imageUrl)=>{
-            if (err){
-                return cb(err);
-            }
-            // 썸네일 이미지 변환후 s3에 이미지 업로드
-            s3upload.thumbnail(profilePath, profileImg.type, 'profileThumbnail', userId, (err, thumbnailUrl)=>{
+    async.waterfall([
+        function(cb){
+            //커버사진 수정
+            const coverImg = req.body.coverImg;
+            // s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, callback(imageUrl))
+            // User.getImageUrl('coverImg', userId, callback(err,imageUrl))
+            // User.updateUser(userId,query,callback(err,updatedUser))
+            // s3upload.delete(url, callback(err, result))
+            // fs.unlink(coverImg.path, callback(err))
+            User.getImageUrl('coverImg', userId, (err, prevImageUrl)=>{
                 if (err){
                     return cb(err);
                 }
-                // 유저 정보에서 프로필 이미지 url 수정
+                if (coverImg){ // new image, should be update coverImg of user
+                    s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, imageUrl)=>{ // should be delete a temporary file in the upload folder
+                        if (err){
+                            return cb(err, null);
+                        }
+                        query = {
+                            coverImg : imageUrl
+                        }
+                        User.updateUser(userId, query, (err, updatedUser)=>{ //return updated user profile information
+                            if (err){
+                                return cb(err);
+                            }
+                            cb(null, updatedUser);
+                            if (prevImageUrl.coverImg){ // if there is a original image in db then should be deleted in s3, else, not need to delete the image in s3
+                                // originally has a image, delete original image url at s3 and return updated prfile
+                                s3upload.delete(prevImageUrl.coverImg, (err, result)=>{
+                                    if (err){
+                                        console.log('FAIL TO DELETE ORIGINAL COVER IMAGE IN S3 >>>', prevImageUrl.coverImg);
+                                    }
+                                });
+                            }
+                        });
+                        fs.stat(coverImg.path, (err, stats)=>{
+                            if (err){
+                                console.log('THERE IS NO TEMPORARY FILE >>>', coverImg.path);
+                            } else {
+                                fs.unlink(coverImg.path, (err)=>{
+                                    if (err){
+                                        console.log('FAIL TO DELETE THE IMAGE >>>', coverImg.path);
+                                    }
+                                });
+                            }
+                        });
+
+                    });
+                } else { // delete image
+                    if (prevImageUrl.coverImg){
+                        // originally has a image, just update at db, delete at s3 and return updated profile
+                        query = {
+                            coverImg : null
+                        }
+                        User.updateUser(userId, query, cb);
+                        s3upload.delete(prevImageUrl.coverImg, (err, result)=>{
+                            if (err){
+                                console.log('FAIL TO DELETE THE IMAGE IN S3 >>>', prevImageUrl.coverImg);
+                            }
+                        });
+                    } else {
+                        //originally has no image, nothing to happen and just return his or her profile
+                        User.getMyProfile(userId, cb);
+                    }
+                }
+            });
+        },
+        function(cb){
+            //프로필 수정
+            const profileImg = req.body.profileImg;
+            // s3upload.original(profileImg.path, profileImg.type, 'profileImg', userId, callback(imageUrl))
+            // User.getImageUrl('profileImg', userId, callback(err,imageUrl))
+            // User.updateUser(userId,query,callback(err,updatedUser))
+            // s3upload.delete(url, callback(err, result))
+            // fs.unlink(profileImg.path, callback(err))
+            // s3upload.thumbnail(profilePath, profileImg.type, 'profileThumbnail', userId, callback(err, thumbnailUrl))
+            // Post.updatePostUserInfo(userId, queryForPost, callback(err, results))
+
+            User.getImageUrl('profileImg profileThumbnail', userId, (err, prevImageUrl)=>{
+                if (profileImg){ // new image
+                    async.parallel([
+                        function(callback){
+                            s3upload.original(profileImg.path, profileImg.type, 'profileImg', userId, callback);
+                        },
+                        function(callback){
+                            s3upload.thumbnail(profileImg.path, profileImg.type, 'profileThumbnail', userId, callback);
+                        }
+                    ], (err, imageUrls)=>{
+                        if (err){
+                            // 두 업로드 중 하나가 에러발생 => 업로드 된 url 삭제
+                            s3upload.delete(imageUrls[0], (err, result)=>{
+                                if (err){
+                                    console.log('ERROR OCCUR ON UPLOADING PROFILE THUMBNAIL >>>', imageUrls[1]);
+                                }
+                            });
+                            s3upload.delete(imageUrls[1], (err, result)=>{
+                                if (err){
+                                    console.log('ERROR OCCUR ON UPLOADING PROFILE THUMBNAIL >>>', imageUrls[0]);
+                                }
+                            });
+                            return cb(err);
+                        }
+                        query = {
+                            profileImg : imageUrls[0],
+                            profileThumbnail : imageUrls[1]
+                        }
+                        User.updateUser(userId, query, (err, updatedUser)=>{
+                            const queryForPost = {
+                                profileThumbnail : imageUrls[1]
+                            }
+                            Post.updatePostUserInfo(userId, queryForPost, (err, results)=>{
+                                if (err){
+                                    // user model에서 업데이트된 거 원래 것으로 복구
+                                    // 업로드 된 url 삭제
+                                    query = {
+                                        profileImg : prevImageUrl.profileImg,
+                                        profileThumbnail : prevImageUrl.profileThumbnail
+                                    }
+                                    User.updateUser(userId, query, (err, results)=>{
+                                        if (err){
+                                            console.log('FAIL TO REPAIR USER INFORMATION, SHOULD BE >>>', query);
+                                        }
+                                    });
+                                    s3upload.delete(imageUrls[0], (err, result)=>{
+                                        if (err){
+                                            console.log('ERROR OCCUR ON UPLOADING PROFILE THUMBNAIL >>>', imageUrls[1]);
+                                        }
+                                    });
+                                    s3upload.delete(imageUrls[1], (err, result)=>{
+                                        if (err){
+                                            console.log('ERROR OCCUR ON UPLOADING PROFILE THUMBNAIL >>>', imageUrls[0]);
+                                        }
+                                    });
+                                    return cb(err);
+                                }
+                                cb(null, updatedUser);
+                                if ( prevImageUrl.profileImg || prevImageUrl.profileThumbnail ){ //originally has a image, update at db, delete at s3 and return updated profile
+                                    s3upload.delete(prevImageUrl.profileImg, (err, result)=>{
+                                        if (err){
+                                            console.log('FAIL TO DELETE A PROFILEIMG >>>', prevImageUrl.profileImg);
+                                        }
+                                    });
+                                    s3upload.delete(prevImageUrl.profileThumbnail, (err, result)=>{
+                                        if (err){
+                                            console.log('FAIL TO DELETE A PROFILETHUMBNAIL >>>', prevImageUrl.profileThumbnail);
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                        fs.stat(profileImg.path, (err, stats)=>{
+                            if (err){
+                                console.log('THERE IS NO TEMPORARY FILE >>>', profileImg.path);
+                            } else {
+                                fs.unlink(profileImg.path, (err)=>{
+                                    if (err){
+                                        console.log('Fail to delete a temporary file >>>', profilePath);
+                                    }
+                                }); 
+                            }
+                        });
+                        const thumbnailPath = __dirname+'/../upload' + 'thumb_'+pathUtil.basename(profileImg.path);
+                        fs.stat(thumbnailPath, (err, stats)=>{
+                            if (err){
+                                console.log('THERE IS NO TEMPORARY FILE >>>', thumbnailPath);
+                            } else {
+                                fs.unlink(thumbnailPath, (err)=>{
+                                    if (err){
+                                        console.log('Fail to delete a temporary file >>>', thumbnailPath);
+                                    }
+                                }); 
+                            }
+                        });
+                    });
+                } else { // delete image
+                    if ( prevImageUrl.profileImg || prevImageUrl.profileThumbnail ){
+                        //originallly has a image, just update at db, delete at s3 and return updated profile
+                        Uesr.updateUser(userId, query, (err, updateUser)=>{
+                            if (err){
+                                return cb(err);
+                            }
+                            cb(null, updateUser);
+                            s3upload.delete(prevImageUrl.profileImg, (err, result)=>{
+                                if (err){
+                                    console.log('FAIL TO DELETE A PROFILEIMG >>>', prevImageUrl.profileImg);
+                                }
+                            });
+                            s3upload.delete(prevImageUrl.profileThumbnail, (err, result)=>{
+                                if (err){
+                                    console.log('FAIL TO DELETE A PROFILETHUMBNAIL >>>', prevImageUrl.profileThumbnail);
+                                }
+                            });
+                        });
+                    } else {
+                        // originally has no image, nothing to happen and just return his or her profile
+                        User.getMyProfile(userId, cb);
+                    }
+                }
+            });
+        },
+        function(cb){
+            // 닉네임 수정
+            const nickname = req.body.nickname;
+            if (nickname){
                 query = {
-                    profileImg : imageUrl,
-                    profileThumbnail : thumbnailUrl
+                    nickname : req.body.nickname
                 }
                 User.updateUser(userId, query, (err, updatedUser)=>{
                     if (err){
                         return cb(err);
                     }
-                    // 유저가 쓴 모든 글과 댓글들에서 프로필썸네일 url 수정
-                    const queryForPost = {
-                        profileThumbnail : thumbnailUrl
-                    }
-                    Post.updatePostUserInfo(userId, queryForPost, (err, results)=>{
-                        cb(err, updatedUser);
-                        // 임시 폴더에 있는 이미지 모두 삭제
-                        fs.unlink(profilePath, (err)=>{
-                            if (err){
-                                console.log('Fail to delete a temporary file >>>', profilePath);
-                            }
-                            else{
-                                console.log('Removed the temporary image of the post');
-                            }
-                            const thumbnailPath = __dirname+'/../upload' + 'thumb_'+pathUtil.basename(profilePath);
-                            fs.unlink(thumbnailPath, (err)=>{
-                                if (err){
-                                    console.log('Fail to delete a temporary file >>>', thumbnailPath);
-                                }
-                                else{
-                                    console.log('Removed the temporary image of the post');
-                                }
-                            });
-                        });
+                    User.updatePostUserInfo(userId, query, (err, result)=>{
+                        if (err){
+                            return cb(err);
+                        }
+                        cb(null, updatedUser);
                     });
                 });
-            });
-        });
-    } else {
-        //삭제
-    }
-
-    // 닉네임 수정
-    const nickname = req.body.nickname;
-    if (nickname){
-        query = {
-            nickname : req.body.nickname
+            }
+        },
+        function(cb){
+            // 주소 수정
+            const address = {
+                area1 : req.body.area1,
+                area2 : req.body.area2,
+                area3 : req.body.area3,
+                area4 : req.body.area4,
+                area5 : req.body.area5
+            }
+            if ( address.area1 || address.area2 || address.area3 || address.area4 || address.area5 ){
+                    query = {
+                        userAddress : address
+                    }
+                    User.updateUser(userId, query, cb);
+            }
+        },
+        function(cb){
+            // 아이 생년월일 수정
+            const babyId = req.body.babyId;
+            const age = req.body.babyAge;
+            if (babyId && age){
+                var babyAge = new Date();
+                babyAge.setFullYear(parseInt(age.substring(0,4)));
+                babyAge.setMonth(parseInt(age.substring(5,6))-1);
+                babyAge.setDate(parseInt(age.substring(7,8)));
+                User.updateBabyAge(userId, babyId, babyAge, cb);
+            }
+        },
+        function(cb){
+            // 아이 추가
+            const addbaby = req.body.addBaby;
+            if (addbaby){
+                query = { $push : { baby : { babyAge : addbaby } } }
+                User.updateUser(userId, query, cb);
+            }
         }
-        User.updateUser(userId, query, (err, updatedUser)=>{
-            if (err){
-                return cb(err);
-            }
-            User.updatePostUserInfo(userId, query, cb);
-        });
-    }
-
-    // 주소 수정
-    const address = {
-        area1 : req.body.area1,
-        area2 : req.body.area2,
-        area3 : req.body.area3,
-        area4 : req.body.area4,
-        area5 : req.body.area5
-    }
-    if ( address.area1 || address.area2 || address.area3 || address.area4 || address.area5 ){
-            query = {
-                userAddress : address
-            }
-            User.updateUser(userId, query, cb);
-    }
-
-    // 아이 생년월일 수정
-    const babyId = req.body.babyId;
-    const age = req.body.babyAge;
-    if (babyId && age){
-        var babyAge = new Date();
-        babyAge.setFullYear(parseInt(age.substring(0,4)));
-        babyAge.setMonth(parseInt(age.substring(5,6))-1);
-        babyAge.setDate(parseInt(age.substring(7,8)));
-        User.updateBabyAge(userId, babyId, babyAge, cb);
-    }
-
-    // 아이 추가
-    const addbaby = req.body.addBaby;
-    if (addbaby){
-        query = { $push : { baby : { babyAge : addbaby } } }
-        User.updateUser(userId, query, cb);
-    }
+    ], callback);
 }
 
 
@@ -251,7 +382,7 @@ function userList(req, res, next){
     }
     const ageRange = parseInt(req.query.ageRange);
     const endUser = req.query.endUser;
-    const userCount = req.query.userCount;
+    const userCount = parseInt(req.query.userCount);
 
     const cb = function(err, result){
         if (err){

@@ -213,6 +213,7 @@ Post.getPostDetail = function(postId, callback){
 
 // 댓글 가져오기
 Post.getReplies = function(endReply, postId, count, callback){
+    console.log('getting replies...');
     if (!endReply){
         endReply = 0;
     }
@@ -222,10 +223,13 @@ Post.getReplies = function(endReply, postId, count, callback){
     post.findOne({ _id : postId}, 'reply -_id')
         .slice('reply', [endReply, count])
         .then((results)=>{
-            results.reply.endReply = endReply+count;
-            callback(null, results.reply);
+            console.log('REPLY FOUND >>>', results.reply);
+            endReply = endReply+results.reply.length;
+            console.log('ENDREPLY ADDED >>>', results.reply);
+            callback(null, results.reply, endReply);
         }, (err)=>{
-            callback(err, null);
+            console.log('REPLY NOT FOUND');
+            callback(err, null, null);
         });
 }
 
@@ -242,14 +246,13 @@ Post.recordReply = function(reply, callback){
         console.log('THE RESULT', results);
         reply.profileThumbnail = results.profileThumbnail;
         reply.nickname = results.nickname;
-        post.update({_id : reply.postId}, {$pushAll: {reply : [reply]}, $inc: {replyCount : 1}}, {upsert : true}, (err, result)=>{
+        post.findOneAndUpdate({_id : reply.postId}, {$pushAll: {reply : [reply]}, $inc: {replyCount : 1}}, {new : true, upsert : true, fields : 'reply'}, (err, doc)=>{
             if (err){
                 return callback(err, null); 
             }
             console.log('REPLY UPDATE COMPLETE');
-            console.log('replyUpload', result);
-            reply._id = result._id;
-            callback(null, reply);
+            console.log('replyUpload', doc);
+            callback(null, doc.reply);
         });
     });
 }

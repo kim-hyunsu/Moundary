@@ -14,15 +14,15 @@ router.route('/reply')
 router.put('/reply/like', likeReply);
 
 function replyList(req, res, next){
+    console.log('get (get) request of /reply');
     const postId = req.query.postId;
-    const endPost = req.query.endPost;
-    const replyCount = req.query.replyCount;
-    Post.getReplies(endPost, postId, replyCount, (err, results)=>{
+    const endReply = parseInt(req.query.endReply);
+    const replyCount = parseInt(req.query.replyCount);
+    Post.getReplies(endReply, postId, replyCount, (err, results, endReply)=>{
         if (err){
             return next(err);
         }
-        endReply = results.endReply;
-        delete results.endReply;
+        console.log('got reply list >>>', results);
         const data = {
             msg : 'success',
             replyPage : {
@@ -37,20 +37,20 @@ function replyList(req, res, next){
 
 function writeReply(req, res, next){
     console.log("Let's start to write a reply");
-    const now = new Date();  
+    const now = new Date();
     const reply = req.body;
     reply.userId = req.query.userId;
     reply.replyDate = now;
     console.log('This is willing to be uploaded reply >>>', reply);
     // reply = {postId : , replyContent : , userId : , replyDate : }
-    Post.recordReply(reply, (err, recordedReply)=>{
+    Post.recordReply(reply, (err, updatedReplyList)=>{
         if (err){
             return next(err);
         }
         console.log('Uploaded result');
         const data = {
             msg : 'success',
-            data : recordedReply
+            data : updatedReplyList
         }
         res.json(data);
     });

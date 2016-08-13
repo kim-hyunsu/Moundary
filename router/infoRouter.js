@@ -22,9 +22,9 @@ router.put('/post/like', likeInfo);
 function infoList(req, res, next){
     console.log('get (get) request of /info');
     var postAddress = req.query;
-    const category = postAddress.category;
+    const category = parseInt(postAddress.category);
     const endPost = postAddress.endPost;
-    const postCount = postAddress.postCount;
+    const postCount = parseInt(postAddress.postCount);
     const userId = req.query.userId;
     delete postAddress.category;
     delete postAddress.endPost;
