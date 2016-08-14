@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const async = require('async');
 const fs = require('fs');
+const pathUtil = require('path');
 const User = require('../model/users.js');
 const Post = require('../model/posts.js');
 const Holder = require('../model/friendsHold.js');
@@ -101,17 +102,87 @@ function modifyProfile(req, res, next){
     const userId = req.query.userId;
     var query; // 수정할 정보를 담을 query
 
-    const callback = function(err, result){
+    const response = function(err, result){
         if (err){
+            console.log('FATL TO MODIFY PROFILE OF >>>', userId);
             return next(err);
         }
         const data = {
             msg : 'success',
-            data : result
+            data : result[result.length-1]
         }
         res.json(data);
     }
-    async.waterfall([
+    async.series([
+        function(cb){
+            // 닉네임 수정
+            const nickname = req.body.nickname;
+            if (nickname){
+                query = {
+                    nickname : req.body.nickname
+                }
+                User.updateUser(userId, query, (err, updatedUser)=>{
+                    if (err){
+                        return cb(err);
+                    }
+                    Post.updatePostUserInfo(userId, query, (err, result)=>{
+                        if (err){
+                            return cb(err);
+                        }
+                        cb(null, updatedUser);
+                    });
+                });
+            } else {
+                cb(null, null);
+            }
+        },
+        function(cb){
+            // 주소 수정
+            const address = {
+                area1 : req.body.area1,
+                area2 : req.body.area2,
+                area3 : req.body.area3,
+                area4 : req.body.area4,
+                area5 : req.body.area5
+            }
+            if ( address.area1 || address.area2 || address.area3 || address.area4 || address.area5 ){
+                    query = {
+                        userAddress : address
+                    }
+                    User.updateUser(userId, query, cb);
+            } else {
+                cb(null, null);
+            }
+        },
+        function(cb){
+            // 아이 생년월일 수정
+            const babyId = req.body.babyId;
+            const age = req.body.babyAge;
+            if (babyId && age){
+                var babyAge = new Date();
+                babyAge.setFullYear(parseInt(age.substring(0,4)));
+                babyAge.setMonth(parseInt(age.substring(4,6))-1);
+                babyAge.setDate(parseInt(age.substring(6,8)));
+                User.updateBabyAge(userId, babyId, babyAge, cb);
+            } else {
+                cb(null, null);
+            }
+        },
+        function(cb){
+            // 아이 추가
+            const addBaby = req.body.addBaby;
+            console.log('USER WANT TO ADD A BIRTHDAY >>>', addBaby);
+            if (addBaby){
+                var babyAge = new Date();
+                babyAge.setFullYear(parseInt(addBaby.substring(0,4)));
+                babyAge.setMonth(parseInt(addBaby.substring(4,6))-1);
+                babyAge.setDate(parseInt(addBaby.substring(6,8)));
+                query = { $push : { baby : { babyAge : babyAge } } };
+                User.updateUser(userId, query, cb);
+            } else {
+                cb(null, null);
+            }
+        },
         function(cb){
             //커버사진 수정
             const coverImg = req.body.coverImg;
@@ -272,7 +343,7 @@ function modifyProfile(req, res, next){
                                 }); 
                             }
                         });
-                        const thumbnailPath = __dirname+'/../upload' + 'thumb_'+pathUtil.basename(profileImg.path);
+                        const thumbnailPath = __dirname+'/../upload/thumb_'+pathUtil.basename(profileImg.path);
                         fs.stat(thumbnailPath, (err, stats)=>{
                             if (err){
                                 console.log('THERE IS NO TEMPORARY FILE >>>', thumbnailPath);
@@ -310,64 +381,8 @@ function modifyProfile(req, res, next){
                     }
                 }
             });
-        },
-        function(cb){
-            // 닉네임 수정
-            const nickname = req.body.nickname;
-            if (nickname){
-                query = {
-                    nickname : req.body.nickname
-                }
-                User.updateUser(userId, query, (err, updatedUser)=>{
-                    if (err){
-                        return cb(err);
-                    }
-                    User.updatePostUserInfo(userId, query, (err, result)=>{
-                        if (err){
-                            return cb(err);
-                        }
-                        cb(null, updatedUser);
-                    });
-                });
-            }
-        },
-        function(cb){
-            // 주소 수정
-            const address = {
-                area1 : req.body.area1,
-                area2 : req.body.area2,
-                area3 : req.body.area3,
-                area4 : req.body.area4,
-                area5 : req.body.area5
-            }
-            if ( address.area1 || address.area2 || address.area3 || address.area4 || address.area5 ){
-                    query = {
-                        userAddress : address
-                    }
-                    User.updateUser(userId, query, cb);
-            }
-        },
-        function(cb){
-            // 아이 생년월일 수정
-            const babyId = req.body.babyId;
-            const age = req.body.babyAge;
-            if (babyId && age){
-                var babyAge = new Date();
-                babyAge.setFullYear(parseInt(age.substring(0,4)));
-                babyAge.setMonth(parseInt(age.substring(5,6))-1);
-                babyAge.setDate(parseInt(age.substring(7,8)));
-                User.updateBabyAge(userId, babyId, babyAge, cb);
-            }
-        },
-        function(cb){
-            // 아이 추가
-            const addbaby = req.body.addBaby;
-            if (addbaby){
-                query = { $push : { baby : { babyAge : addbaby } } }
-                User.updateUser(userId, query, cb);
-            }
         }
-    ], callback);
+    ], response);
 }
 
 

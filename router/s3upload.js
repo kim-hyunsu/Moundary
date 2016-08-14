@@ -98,7 +98,7 @@ s3upload.delete = function(url, callback){
     }
     const params = {
         Bucket : bucketName,
-        Key : url
+        Key : url.replace("http://s3.ap-northeast-2.amazonaws.com/"+bucketName+"/", "")
     }
     s3.deleteObject(params, (err, data)=>{
         if (err){

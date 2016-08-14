@@ -265,7 +265,8 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
             return callback(err, null);
         }
         // 유저가 쓴 모든 댓글의 profileThumbnail 수정
-        var query = {}
+        var query = {$set : {} };
+        console.log('USERINFO >>>', userInfo);
         for(var key in userInfo){
             query['$set']['reply.$.'+key] = userInfo[key];
         }

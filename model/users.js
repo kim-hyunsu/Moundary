@@ -93,6 +93,9 @@ User.updateUser = function(userId, userInfo, callback){
         if (err){
             return callback(err, null);
         }
+        console.log('UPDATED PROFILE INFO >>>');
+        console.log(result);
+        console.log('<<<')
         callback(null, result);
     });
 }

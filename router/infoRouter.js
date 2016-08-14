@@ -114,7 +114,7 @@ function writeInfo(req, res, next){
         console.log('s3 uploaded the original image');
         post.postImg = imageUrl;
         s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', userId, (err, imageUrl)=>{
-            const thumbnailPath = __dirname+'/../upload/' + 'thumb_'+pathUtil.basename(postImg.path);
+            const thumbnailPath = __dirname+'/../upload/thumb_'+pathUtil.basename(postImg.path);
             if(err){
                 return next(err);
             }

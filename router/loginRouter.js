@@ -81,7 +81,7 @@ function signup(req, res, next){
                     if (err){
                         console.log(err);
                     }
-                    thumbnailPath = __dirname+'/../upload/' + 'thumb_'+pathUtil.basename(profileImg.path);
+                    thumbnailPath = __dirname+'/../upload/thumb_'+pathUtil.basename(profileImg.path);
                     fs.unlink(thumbnailPath, (err)=>{
                         if (err){
                             console.log(err);
