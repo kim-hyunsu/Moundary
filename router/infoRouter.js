@@ -174,11 +174,55 @@ function modifyInfo(req, res, next){
 }
 
 function deleteInfo(req, res, next){
-
+    const userId = req.query.userId;
+    const postId = req.body.postId;
+    Post.remove(userId, postId, (err, removedPost)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            postId : removedPost
+        }
+        res.json(data);
+        s3upload.delete(removedPost.postImg, (err, result)=>{
+            if (err){
+                console.log('FAIL TO DELETE THE IMAGE IN S3 >>>', removedPost.postImg);
+            }
+        });
+        s3upload.delete(removedPost.postThumbnail, (err, result)=>{
+            if (err){
+                console.log('FAIL TO DELETE THE IMAGE IN S3 >>>', removedPost.postThumbnail);
+            }
+        });
+    });
 }
 
 function likeInfo(req, res, next){
-    
+    const userId = req.query.userId;
+    const postId = req.body.postId;
+    Post.checkLiked(userId, postId, (err, liked)=>{
+        if ( err ){
+            return next(err);
+        }
+        if (!liked){
+            // 아직 좋아요 안 한 경우
+            const query = {$push : {postLikeUsers : userId}}; // db에 likeCount 넣을지 말지 정하기(만약 db쿼리에서 바로 결과 mylike를 기록할 수 있다면 likeCount를 넣고 불가능하다면 그냥 도출된 postLikeUsers에서 length계산       
+        } else {
+            // 이미 좋아요 한 경우
+            const query = {$pull : {postLikeUsers : userId}};
+        }
+        Post.updatePost(userId, postId, query, (err, updatedPost)=>{
+            if (err){
+                return next(err);
+            }
+            const data = {
+                msg : 'success',
+                postId : updatedPost._id
+            }
+            res.json(data);
+        }); 
+    });    
 }
 
 module.exports = router;

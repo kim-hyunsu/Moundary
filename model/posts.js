@@ -18,7 +18,7 @@ Post.getPosts = function(endPost, userId, count, callback){
     }
     user.findOne({_id : userId}, 'friendList -_id')
         .then((results)=>{
-            if (!results){
+            if (!results){  
                 callback(err, null);
             }
             const friendList = results.friendList;
@@ -291,6 +291,23 @@ Post.deleteExpiredPosts = function(callback){
         });
 }
 
+Post.updatePost = function(userId, postId, query, callback){
+    post.findOneAndUpdate({_id : postId, userId : userId}, query, {new : true, upsert : true, fields : '-reply'})
+        .then((doc)=>{
+            callback(null, doc);
+        }, (err)=>{
+            callback(err, null);
+        });
+}
+
+Post.removePost = function(userId, postId, callback){
+    post.findOneAndRemove({_id : postId, userId : userId}, {fields : 'coverImg'})
+        .then((doc)=>{
+            callback(null, doc);
+        }, (err)=>{
+            callback(err, null);
+        });
+}
 
 
 module.exports = Post;
