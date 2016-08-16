@@ -170,7 +170,71 @@ function infoDetail(req, res, next){
 }
 
 function modifyInfo(req, res, next){
+    const userId = req.query.userId;
+    const postId = req.body.postId;
+    const category = req.body.category;
+    const address = {
+        area1 : req.body.area1,
+        area2 : req.body.area2,
+        area3 : req.body.area3,
+        area4 : req.body.area4,
+        area5 : req.body.area5
+    }
+    const due = req.body.due;
+    const postContent = req.body.postContent;
+    const postImg = req.body.postImg;
+    var query = {};
+    async.parallel([
+        function(callback){
 
+        },
+        function(callback){
+
+        },
+        function(callback){
+
+        },
+        function(callback){
+
+        },
+        function(callback){
+
+        }
+    ])
+    if (category){
+        query.category = category;
+    }
+    if (address.area1 || address.area2 || address.area3 || address.area4 || address.area5){
+        query.postAddress = address;
+    }
+    if (due){
+        query.due = due;
+    }
+    if (postContent){
+        query.postContent = postContent;
+    }
+    if (postImg && postImg.size > 0){
+        async.parallel([
+            function(cb){
+                s3upload.original(postImg.path, postImg.type, 'postImg', userId, cb);
+            },
+            function(cb){
+                s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', userId, cb);
+            }
+        ], (err, imageUrls)=>{
+            if (err){
+                //s3삭제
+            }
+            query.postImg = imageUrls[0];
+            query.postThumbnail = imageUrls[1];
+        });
+    }
+    Post.updatedPost(userId, postId, query, (err, updatedPost)=>{
+        if (err){
+            return next(err);
+        }
+        
+    });
 }
 
 function deleteInfo(req, res, next){

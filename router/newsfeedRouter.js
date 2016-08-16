@@ -178,27 +178,27 @@ function writePost(req, res, next){
     });
 }
 
-// function postDetail(req, res, next){
-//     console.log('get (get) request of /post/detail');
-//     const postId = req.query.postId;
-//     Post.getPostDetail(postId, (err, results)=>{
-//         if (err){
-//             return next(err);
-//         }
-//         const data = {
-//             msg : 'success',
-//             data : results
-//         }
-//         res.json(data);
-//     });
-// }
+function postDetail(req, res, next){
+    console.log('get (get) request of /post/detail');
+    const postId = req.query.postId;
+    Post.getPostDetail(postId, (err, results)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : results
+        }
+        res.json(data);
+    });
+}
 
 function modifyPost(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
     const postContent = req.body.postContent;
     const postImg = req.body.postImg;
-    if (postContent || postImg){
+    if (postContent || postImg && postImg.size > 0){
         var query = {};
         async.parallel([
             function(cb){
@@ -217,6 +217,17 @@ function modifyPost(req, res, next){
                         }
                         query.postImg = imageUrl;
                         cb();
+                        fs.stat(postImg.path, (err, stats)=>{
+                            if (err){
+                                console.log('THERE IS NO IMAGE TO DELETE>>>', postImg.path);
+                            } else {
+                                fs.unlink(postImg.path, (err)=>{
+                                    if (err){
+                                        console.log('FAIL TO DELETE THE IMAGE IN UPLOAD FIEL >>>', postImg.path);
+                                    }
+                                });
+                            }
+                        });
                     });
                 } else {
                     cb();
