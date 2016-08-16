@@ -260,21 +260,20 @@ Post.recordReply = function(reply, callback){
 // userId에 해당하는 유저가 쓴 모든 글과 댓글의 userInfo(nickname or profileThumbnail)변경
 Post.updatePostUserInfo = function(userId, userInfo, callback){
     // 유저가 쓴 모든 post의 profileThumbnail 수정
-    post.update({userId : userId}, userInfo, {upsert: true}, (err, result)=>{
+    post.update({userId : userId}, userInfo, {multi:true}, (err, result)=>{
         if (err){
             return callback(err, null);
         }
         // 유저가 쓴 모든 댓글의 profileThumbnail 수정
-        var query = {$set : {} };
-        console.log('USERINFO >>>', userInfo);
+        var query = {};
         for(var key in userInfo){
-            query['$set']['reply.$.'+key] = userInfo[key];
+            query['reply.$.'+key] = userInfo[key];
         }
-        post.update({'reply.userId' : userId}, query, {upsert :true}, (err,results)=>{
+        post.update({'reply.userId' : userId}, query, {multi:true}, (err,results)=>{
             if (err){
                 return callback(err, null);
             }
-            result.results = results
+            result.results = results;
             callback(null, result); //결과값 제대로 정하기
         });
     });
@@ -309,5 +308,13 @@ Post.removePost = function(userId, postId, callback){
         });
 }
 
+Post.updateReply = function(userId, postId, query, callback){
+    post.update({_id : postId, 'reply.userId' : userId}, query, 'reply -_id')
+        .then((doc)=>{
+            callback(null, doc);
+        }, (err)=>{
+            callback(err, null);
+        });
+}
 
 module.exports = Post;

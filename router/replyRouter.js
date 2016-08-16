@@ -57,11 +57,58 @@ function writeReply(req, res, next){
 }
 
 function modifyReply(req, res, next){
-
+    const userId = req.query.userId;
+    const postId = req.body.postId;
+    const replyId = req.body.replyId;
+    const replyContent = req.body.replyContent;
+    if (!replyContent){
+        const data = {
+            msg : 'success',
+            data : {
+                replyId : replyId,
+                postId : postId
+            }
+        }
+        return res.json(data);
+    }
+    const query = {
+        $set : {
+            reply : {
+                userId : userId,
+                replyContent : replyContent
+            }
+        }
+    }
+    Post.updateReply(userId, postId, query, (err, updatedPost)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : updatedPost.reply
+        }
+        res.json(data);
+    });
 }
 
 function deleteReply(req, res, next){
-
+    const userId = req.query.userId;
+    const postId = req.body.postId;
+    const replyId = req.body.replyId;
+    const query = {
+        $pull : {
+            'reply._id' : replyId
+        }
+    }
+    Post.updateReply(userId, postId, query, (err, updatedPost)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : updatedPost.reply
+        }
+    });
 }
 
 function likeReply(req, res, next){

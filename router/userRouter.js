@@ -119,7 +119,7 @@ function modifyProfile(req, res, next){
             const nickname = req.body.nickname;
             if (nickname){
                 query = {
-                    nickname : req.body.nickname
+                    nickname : nickname
                 }
                 User.updateUser(userId, query, (err, updatedUser)=>{
                     if (err){
@@ -195,7 +195,7 @@ function modifyProfile(req, res, next){
                 if (err){
                     return cb(err);
                 }
-                if (coverImg){ // new image, should be update coverImg of user
+                if ( coverImg && coverImg.size > 0 ){ // new image, should be update coverImg of user
                     s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, imageUrl)=>{ // should be delete a temporary file in the upload folder
                         if (err){
                             return cb(err, null);
@@ -230,6 +230,8 @@ function modifyProfile(req, res, next){
                         });
 
                     });
+                } else if ( coverImg ) {
+                    User.getMyProfile(userId, cb);
                 } else { // delete image
                     if (prevImageUrl.coverImg){
                         // originally has a image, just update at db, delete at s3 and return updated profile
@@ -261,7 +263,7 @@ function modifyProfile(req, res, next){
             // Post.updatePostUserInfo(userId, queryForPost, callback(err, results))
 
             User.getImageUrl('profileImg profileThumbnail', userId, (err, prevImageUrl)=>{
-                if (profileImg){ // new image
+                if (profileImg && profileImg.size > 0){ // new image
                     async.parallel([
                         function(callback){
                             s3upload.original(profileImg.path, profileImg.type, 'profileImg', userId, callback);
@@ -356,6 +358,8 @@ function modifyProfile(req, res, next){
                             }
                         });
                     });
+                } else if (profileImg){
+                    USer.getMyProfile(userId, cb);
                 } else { // delete image
                     if ( prevImageUrl.profileImg || prevImageUrl.profileThumbnail ){
                         //originallly has a image, just update at db, delete at s3 and return updated profile

@@ -198,64 +198,7 @@ function modifyPost(req, res, next){
     const postId = req.body.postId;
     const postContent = req.body.postContent;
     const postImg = req.body.postImg;
-    if (postContent || postImg && postImg.size > 0){
-        var query = {};
-        async.parallel([
-            function(cb){
-                if (postContent){
-                    query.postContent = postContent;
-                    cb();
-                } else {
-                    cb();
-                }
-            },
-            function(cb){
-                if (postImg){
-                    s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, imageUrl)=>{
-                        if (err){
-                            return cb(err);
-                        }
-                        query.postImg = imageUrl;
-                        cb();
-                        fs.stat(postImg.path, (err, stats)=>{
-                            if (err){
-                                console.log('THERE IS NO IMAGE TO DELETE>>>', postImg.path);
-                            } else {
-                                fs.unlink(postImg.path, (err)=>{
-                                    if (err){
-                                        console.log('FAIL TO DELETE THE IMAGE IN UPLOAD FIEL >>>', postImg.path);
-                                    }
-                                });
-                            }
-                        });
-                    });
-                } else {
-                    cb();
-                }
-            }
-        ], (err)=>{
-            if (err){
-                return next(err);
-            }
-            Post.updatePost(userId, postId, query, (err, updatedPost)=>{
-                if (err){
-                    next(err);
-                    s3upload.delete(query.postImg, (err, result)=>{
-                        if (err){
-                            console.log('FAIL TO DELETE THE POSTIMG IN S3 >>>', query.postImg);
-                        }
-                    });
-                    return;
-                }
-                const data = {
-                    msg : 'success',
-                    data : updatedPost
-                }
-                res.json(data);
-            });
-        });
-
-    } else {
+    if (!postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
                 return next(err);
@@ -264,9 +207,64 @@ function modifyPost(req, res, next){
                 msg : 'success',
                 data : result
             }
-            res.json(data);
+            return res.json(data);
         });
     }
+    var query = {};
+    async.parallel([
+        function(cb){
+            if (postContent){
+                query.postContent = postContent;
+                cb();
+            } else {
+                cb();
+            }
+        },
+        function(cb){
+            if (postImg || postImg.size > 0){
+                s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, imageUrl)=>{
+                    if (err){
+                        return cb(err);
+                    }
+                    query.postImg = imageUrl;
+                    cb();
+                    fs.stat(postImg.path, (err, stats)=>{
+                        if (err){
+                            console.log('THERE IS NO IMAGE TO DELETE>>>', postImg.path);
+                        } else {
+                            fs.unlink(postImg.path, (err)=>{
+                                if (err){
+                                    console.log('FAIL TO DELETE THE IMAGE IN UPLOAD FIEL >>>', postImg.path);
+                                }
+                            });
+                        }
+                    });
+                });
+            } else {
+                cb();
+            }
+        }
+    ], (err)=>{
+        if (err){
+            return next(err);
+        }
+        Post.updatePost(userId, postId, query, (err, updatedPost)=>{
+            if (err){
+                next(err);
+                s3upload.delete(query.postImg, (err, result)=>{
+                    if (err){
+                        console.log('FAIL TO DELETE THE POSTIMG IN S3 >>>', query.postImg);
+                    }
+                });
+                return;
+            }
+            const data = {
+                msg : 'success',
+                data : updatedPost
+            }
+            res.json(data);
+        });
+    });
 }
 
 function deletePost(req, res, next){

@@ -170,9 +170,10 @@ function infoDetail(req, res, next){
 }
 
 function modifyInfo(req, res, next){
+    var dueDate = new Date();
     const userId = req.query.userId;
     const postId = req.body.postId;
-    const category = req.body.category;
+    const category = parseInt(req.body.category);
     const address = {
         area1 : req.body.area1,
         area2 : req.body.area2,
@@ -183,57 +184,126 @@ function modifyInfo(req, res, next){
     const due = req.body.due;
     const postContent = req.body.postContent;
     const postImg = req.body.postImg;
+    if (!category && !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 && !due && !postContent && !postImg || postImg.size == 0){
+        Post.getPostDetail(postId, (err, result)=>{
+            if (err){
+                return next(err);
+            }
+            const data = {
+                msg : 'success',
+                data : result
+            }
+            return res.json(data);
+        });
+    }
     var query = {};
     async.parallel([
         function(callback){
-
+            if (category){
+                query.category = category;
+                callback();
+            } else {
+                callback();
+            }
         },
         function(callback){
-
+            if (address.area1 || address.area2 || address.area3 || address.area4 || address.area5){
+                query.postAddress = address;
+                callback();
+            } else {
+                callback();
+            }
         },
         function(callback){
-
+            if (due){
+                dueDate.setFullYear(parseInt(due.substring(0,4)));
+                dueDate.setMonth(parseInt(due.substring(4,6))-1);
+                dueDate.setDate(parseInt(due.substring(6,8)));
+                dueDate.setHours(parseInt(due.substring(8,10)));
+                dueDate.setMinutes(parseInt(due.substring(10,12)));
+                query.due = dueDate;
+                callback();
+            } else {
+                callback();
+            }
         },
         function(callback){
-
+            if (postContent){
+                query.postContent = postContent;
+                callback();
+            } else {
+                callback();
+            }
         },
         function(callback){
-
+            if (postImg && postImg.size > 0){
+                async.parallel([
+                    function(cb){
+                        s3upload.original(postImg.path, postImg.type, 'postImg', userId, cb);
+                    },
+                    function(cb){
+                        s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', userId, cb);
+                    }
+                ], (err, imageUrls)=>{
+                    if (err){
+                        //s3삭제
+                        return callback(err);
+                    }
+                    query.postImg = imageUrls[0];
+                    query.postThumbnail = imageUrls[1];
+                    callback();
+                    fs.stat(postImg.path, (err, stats)=>{
+                        if (err){
+                            console.log('THERE IS NO THE IMAGE IN UPLOAD FILE >>>', postImg.path);
+                        } else {
+                            fs.unlink(postImg.path, (err)=>{
+                                if (err){
+                                    console.log('FAIL TO DELETE THE IMAGE IN UPLOAD FILE >>>', postImg.path);
+                                }
+                            });
+                        }
+                    });
+                    thumbnailPath = __dirname + '/../upload/thumb_'+pathUtil.basename(postImg.path);
+                    fs.stat(thumbnailPath, (err, stats)=>{
+                        if (err){
+                            console.log('THERE IS NO THE IMAGE IN UPLOAD FILE >>>', thumbnailPath);
+                        } else {
+                            fs.unlink(thumbnailPath, (err)=>{
+                                if (err){
+                                    console.log('FAIL TO DELETE THE IMAGE IN UPLOAD FILE >>>', thumbnailPath);
+                                }
+                            });
+                        }
+                    });
+                });
+            } else {
+                callback();
+            }
         }
-    ])
-    if (category){
-        query.category = category;
-    }
-    if (address.area1 || address.area2 || address.area3 || address.area4 || address.area5){
-        query.postAddress = address;
-    }
-    if (due){
-        query.due = due;
-    }
-    if (postContent){
-        query.postContent = postContent;
-    }
-    if (postImg && postImg.size > 0){
-        async.parallel([
-            function(cb){
-                s3upload.original(postImg.path, postImg.type, 'postImg', userId, cb);
-            },
-            function(cb){
-                s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', userId, cb);
-            }
-        ], (err, imageUrls)=>{
-            if (err){
-                //s3삭제
-            }
-            query.postImg = imageUrls[0];
-            query.postThumbnail = imageUrls[1];
-        });
-    }
-    Post.updatedPost(userId, postId, query, (err, updatedPost)=>{
+    ], (err)=>{
         if (err){
             return next(err);
         }
-        
+        Post.updatePost(userId, postId, query, (err, updatedPost)=>{
+            if (err){
+                next(err);
+                s3upload.delete(query.postImg, (err,result)=>{
+                    if (err){
+                        console.log('FAIL TO DELETE THE IMAGE IN S3 >>>', query.postImg);
+                    }
+                });
+                s3upload.delete(query.postThumbnail, (err, result)=>{
+                    if (err){
+                        console.log('FAIL TO DELETE THE IMAGE IN S3 >>>', query.postThumbnail);
+                    }
+                });
+            }
+            const data = {
+                msg : 'success',
+                data : updatedPost
+            }
+            res.json(data);
+        });
     });
 }
 
