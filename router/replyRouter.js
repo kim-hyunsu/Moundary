@@ -15,8 +15,9 @@ router.put('/reply/like', likeReply);
 
 function replyList(req, res, next){
     console.log('get (get) request of /reply');
+    const userId = req.query.userId;
     const postId = req.query.postId;
-    const endReply = parseInt(req.query.endReply);
+    const endReply = req.query.endReply;
     const replyCount = parseInt(req.query.replyCount);
     Post.getReplies(endReply, postId, replyCount, (err, results, endReply)=>{
         if (err){
@@ -73,7 +74,7 @@ function modifyReply(req, res, next){
     const query = {
             'reply.replyContent' : replyContent
     }
-    Post.updateReply(userId, postId, replyId, query, (err, updatedPost)=>{
+    Post.updateReply(userId, postId, replyId, query, (err, updatedReply)=>{
         if (err){
             return next(err);
         }
@@ -97,7 +98,7 @@ function deleteReply(req, res, next){
             'reply._id' : replyId
         }
     }
-    Post.updateReply(userId, postId, replyId, query, (err, updatedPost)=>{
+    Post.updateReply(userId, postId, replyId, query, (err, updatedReply)=>{
         if (err){
             return next(err);
         }
@@ -112,7 +113,43 @@ function deleteReply(req, res, next){
 }
 
 function likeReply(req, res, next){
-    const 
+    const userId = req.query.userId;
+    const postId = req.body.postId;
+    const replyId = req.body.replyId;
+    var query;
+    Post.checkReplyLiked(userId, postId, replyId, (err, liked)=>{
+        if (err){
+            return next(err);
+        }
+        if (!liked){
+            // 아직 좋아요 안함
+            query = {
+                $push : {
+                    'reply.replyLikeUsers' : userId
+                }
+            }
+        } else {
+            // 이미 좋아요 함 
+            query = {
+                $pull : {
+                    'reply.replyLikeUsers' : userId
+                }
+            }
+        }
+        Post.updateReply(userId, postId, replyId, query, (err, updatedReply)=>{
+            if (err){
+                return next(err);
+            }
+            const data = {
+                msg : 'success',
+                data : {
+                    replyId : replyId,
+                    postId : postId
+                }
+            }
+            res.json(data);
+        });
+    });
 }
 
 module.exports = router;

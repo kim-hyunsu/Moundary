@@ -211,7 +211,18 @@ function modifyPost(req, res, next){
         });
     }
     var query = {};
+    var imageUrl;
     async.parallel([
+        function(cb){
+            Post.getImageUrl('postImg', postId, (err, prevImageUrls)=>{
+                if (err){
+                    console.log('THERE IS NO POSTIMG IN THE POST OF >>>', postId);
+                } else {
+                    imageUrl = prevImageUrls;
+                }
+                cb();
+            });
+        },
         function(cb){
             if (postContent){
                 query.postContent = postContent;
@@ -263,6 +274,11 @@ function modifyPost(req, res, next){
                 data : updatedPost
             }
             res.json(data);
+            s3upload.delete(imageUrl.postImg, (err, result)=>{
+                if (err){
+                    console.log('FAIL TO DELETE THE IMAGE IN S3 >>>', imageUrl.postImg)
+                }
+            });
         });
     });
 }
@@ -270,7 +286,7 @@ function modifyPost(req, res, next){
 function deletePost(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
-    Post.remove(userId, postId, (err, removedPost)=>{
+    Post.removePost(userId, postId, (err, removedPost)=>{
         if (err){
             return next(err);
         }
@@ -291,16 +307,17 @@ function deletePost(req, res, next){
 function likePost(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
-    Post.checkLiked(userId, postId, (err, liked)=>{
+    var query;
+    Post.checkPostLiked(userId, postId, (err, liked)=>{
         if ( err ){
             return next(err);
         }
         if (!liked){
             // 아직 좋아요 안 한 경우
-            const query = {$push : {postLikeUsers : userId}}; // db에 likeCount 넣을지 말지 정하기(만약 db쿼리에서 바로 결과 mylike를 기록할 수 있다면 likeCount를 넣고 불가능하다면 그냥 도출된 postLikeUsers에서 length계산       
+            query = {$push : {postLikeUsers : userId}}; // db에 likeCount 넣을지 말지 정하기(만약 db쿼리에서 바로 결과 mylike를 기록할 수 있다면 likeCount를 넣고 불가능하다면 그냥 도출된 postLikeUsers에서 length계산       
         } else {
             // 이미 좋아요 한 경우
-            const query = {$pull : {postLikeUsers : userId}};
+            query = {$pull : {postLikeUsers : userId}};
         }
         Post.updatePost(userId, postId, query, (err, updatedPost)=>{
             if (err){

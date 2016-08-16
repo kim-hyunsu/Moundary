@@ -214,12 +214,11 @@ Post.getPostDetail = function(postId, callback){
 // 댓글 가져오기
 Post.getReplies = function(endReply, postId, count, callback){
     console.log('getting replies...');
-    if (!endReply){
-        endReply = 0;
-    }
-    if (!count){
-        count = 20;
-    }
+
+    // endReply = endReply || "000000000000000000000000"; //object id of 1970.01.01 09:00:00
+    endReply = endReply || 0;    
+    count = count || 20;
+
     post.findOne({ _id : postId}, 'reply -_id')
         .slice('reply', [endReply, count])
         .then((results)=>{
@@ -231,6 +230,21 @@ Post.getReplies = function(endReply, postId, count, callback){
             console.log('REPLY NOT FOUND');
             callback(err, null, null);
         });
+    // post.aggregate()
+    //     .match({_id : mongoose.Types.ObjectId(postId)})
+    //     .project('reply -_id')
+    //     .unwind('reply')
+    //     .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
+    //     .limit(count)
+    //     .sort({'reply._id' : -1})
+    //     .then((results)=>{
+    //         console.log('REPLY FOUND >>>', results);
+    //         // endReply = results[0].reply[0]._id;
+    //         callback(null, results, endReply);
+    //     }, (err)=>{
+    //         console.log('REPLY NOT FOUND');
+    //         callback(err, null, null);
+    //     });
 }
 
 // 포스트  document에 댓글 넣기
@@ -300,7 +314,7 @@ Post.updatePost = function(userId, postId, query, callback){
 }
 
 Post.removePost = function(userId, postId, callback){
-    post.findOneAndRemove({_id : postId, userId : userId}, {fields : 'coverImg'})
+    post.findOneAndRemove({_id : postId, userId : userId}, {fields : 'postImg postThumbnail'})
         .then((doc)=>{
             callback(null, doc);
         }, (err)=>{
@@ -309,12 +323,48 @@ Post.removePost = function(userId, postId, callback){
 }
 
 Post.updateReply = function(userId, postId, replyId, query, callback){
-    post.update({_id : postId, 'reply.userId' : userId, 'reply.replyId' : replyId}, query, 'reply -_id')
+    post.update({_id : postId, 'reply.userId' : userId, 'reply._id' : replyId}, query, 'reply -_id')
         .then((doc)=>{
             callback(null, doc);
         }, (err)=>{
             callback(err, null);
         });
+}
+
+Post.checkPostLiked = function(userId, postId, callback){
+    post.findOne({_id : postId, 'postLikeUsers' : userId})
+        .count((err, count)=>{
+            if (err){
+                callback(err);
+            } else if (count == 0){
+                callback(null, false);
+            } else {
+                callback(null, true);
+            }
+        });
+}
+
+Post.checkReplyLiked = function(userId, postId, replyId, callback){
+    post.findOne({_id : postId, 'reply._id' : replyId, 'reply.replyLikeUsers' : userId})
+        .count((err, count)=>{
+            if (err){
+                callback(err);
+            } else if (count == 0){
+                callback(null, false);
+            } else {
+                callback(null, true);
+            }
+        });
+}
+
+// 이미지 삭제를 위해 기존 이미지 url 얻기
+Post.getImageUrl = function(what, postId, callback){
+    post.findOne({_id : postId}, what, (err, doc)=>{
+        if (err){
+            return callback(err, null);
+        }
+        callback(null, doc);
+    });
 }
 
 module.exports = Post;
