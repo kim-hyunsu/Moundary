@@ -40,7 +40,6 @@ function writeReply(req, res, next){
     const now = new Date();
     const reply = req.body;
     reply.userId = req.query.userId;
-    reply.replyDate = now;
     console.log('This is willing to be uploaded reply >>>', reply);
     // reply = {postId : , replyContent : , userId : , replyDate : }
     Post.recordReply(reply, (err, updatedReplyList)=>{
@@ -72,20 +71,18 @@ function modifyReply(req, res, next){
         return res.json(data);
     }
     const query = {
-        $set : {
-            reply : {
-                userId : userId,
-                replyContent : replyContent
-            }
-        }
+            'reply.replyContent' : replyContent
     }
-    Post.updateReply(userId, postId, query, (err, updatedPost)=>{
+    Post.updateReply(userId, postId, replyId, query, (err, updatedPost)=>{
         if (err){
             return next(err);
         }
         const data = {
             msg : 'success',
-            data : updatedPost.reply
+            data : {
+                replyId : replyId,
+                postId : postId
+            }
         }
         res.json(data);
     });
@@ -100,19 +97,22 @@ function deleteReply(req, res, next){
             'reply._id' : replyId
         }
     }
-    Post.updateReply(userId, postId, query, (err, updatedPost)=>{
+    Post.updateReply(userId, postId, replyId, query, (err, updatedPost)=>{
         if (err){
             return next(err);
         }
         const data = {
             msg : 'success',
-            data : updatedPost.reply
+            data : {
+                replyId : replyId,
+                postId : postId
+            }
         }
     });
 }
 
 function likeReply(req, res, next){
-    
+    const 
 }
 
 module.exports = router;

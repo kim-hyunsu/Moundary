@@ -308,8 +308,8 @@ Post.removePost = function(userId, postId, callback){
         });
 }
 
-Post.updateReply = function(userId, postId, query, callback){
-    post.update({_id : postId, 'reply.userId' : userId}, query, 'reply -_id')
+Post.updateReply = function(userId, postId, replyId, query, callback){
+    post.update({_id : postId, 'reply.userId' : userId, 'reply.replyId' : replyId}, query, 'reply -_id')
         .then((doc)=>{
             callback(null, doc);
         }, (err)=>{
