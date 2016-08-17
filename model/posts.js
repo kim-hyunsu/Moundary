@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const async = require('async');
 // const url = 'mongodb://52.78.98.25:27017/moundary';
 // mongoose.connect(url);
 var db = mongoose.connection;
@@ -276,7 +277,7 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
     // 유저가 쓴 모든 post의 profileThumbnail 수정
     post.update({userId : userId}, userInfo, {multi:true}, (err, result)=>{
         if (err){
-            return callback(err, null);
+            return callback(err);
         }
         // 유저가 쓴 모든 댓글의 profileThumbnail 수정
         var query = {};
@@ -285,24 +286,31 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
         }
         post.find({'reply.userId' : userId}, (err, docs)=>{
             if (err){
-                return callback(err, null);
+                return callback(err);
             }
             async.each(docs, (ele, postCb)=>{
                 async.each(ele.reply, (item, replyCb)=>{
                     for(var key in userInfo){
-                        reply[key] = userInfo[key];
+                        item[key] = userInfo[key];
                     }
                     replyCb();
                 }, (err)=>{
                     if (err){
-                        return replyCb(err, null);
+                        return postCb(err);
                     }
+                    ele.save((err, saved)=>{
+                        if (err){
+                            return postCb(err);
+                        }
+                        postCb();
+                    });
                 });
             }, (err)=>{
-
+                if (err){
+                    return callback(err);
+                }
+                callback(null);
             });
-            result.results = results;
-            callback(null, result); //결과값 제대로 정하기
         });
     });
 }
@@ -336,12 +344,30 @@ Post.removePost = function(userId, postId, callback){
         });
 }
 
-Post.updateReply = function(userId, postId, replyId, query, callback){
-    post.update({_id : postId, 'reply.userId' : userId, 'reply._id' : replyId}, query, 'reply -_id')
+Post.likePost = function(postId, query, callback){
+    post.findOneAndUpdate({_id : postId}, query, {new : true, fields : '-reply'})
         .then((doc)=>{
             callback(null, doc);
         }, (err)=>{
             callback(err, null);
+        });
+}
+
+Post.updateReply = function(userId, postId, replyId, query, callback){
+    post.update({_id : postId, 'reply.userId' : userId, 'reply._id' : replyId}, query)
+        .then((result)=>{
+            callback();
+        }, (err)=>{
+            callback(err);
+        });
+}
+
+Post.likeReply = function(postId, replyId, query, callback){
+    post.update({_id : postId, 'reply._id' : replyId }, query)
+        .then((result)=>{
+            callback();
+        }, (err)=>{
+            callback(err);
         });
 }
 
@@ -359,8 +385,9 @@ Post.checkPostLiked = function(userId, postId, callback){
 }
 
 Post.checkReplyLiked = function(userId, postId, replyId, callback){
-    post.findOne({_id : postId, 'reply._id' : replyId, 'reply.replyLikeUsers' : userId})
+    post.findOne({_id : postId, 'reply._id' : replyId, replyLikeUsers : userId})
         .count((err, count)=>{
+            console.log('COUNT', count);
             if (err){
                 callback(err);
             } else if (count == 0){

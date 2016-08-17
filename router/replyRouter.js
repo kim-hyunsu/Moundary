@@ -23,7 +23,6 @@ function replyList(req, res, next){
         if (err){
             return next(err);
         }
-        console.log('got reply list >>>', results);
         const data = {
             msg : 'success',
             replyPage : {
@@ -72,9 +71,9 @@ function modifyReply(req, res, next){
         return res.json(data);
     }
     const query = {
-            'reply.replyContent' : replyContent
+            'reply.$.replyContent' : replyContent
     }
-    Post.updateReply(userId, postId, replyId, query, (err, updatedReply)=>{
+    Post.updateReply(userId, postId, replyId, query, (err)=>{
         if (err){
             return next(err);
         }
@@ -95,10 +94,16 @@ function deleteReply(req, res, next){
     const replyId = req.body.replyId;
     const query = {
         $pull : {
-            'reply._id' : replyId
+            reply : {
+                _id : replyId,
+                userId : userId
+            }
+        },
+        $inc : {
+            replyCount : -1
         }
     }
-    Post.updateReply(userId, postId, replyId, query, (err, updatedReply)=>{
+    Post.updateReply(userId, postId, replyId, query, (err)=>{
         if (err){
             return next(err);
         }
@@ -109,6 +114,7 @@ function deleteReply(req, res, next){
                 postId : postId
             }
         }
+        res.json(data);
     });
 }
 
@@ -125,18 +131,18 @@ function likeReply(req, res, next){
             // 아직 좋아요 안함
             query = {
                 $push : {
-                    'reply.replyLikeUsers' : userId
+                    'reply.$.replyLikeUsers' : userId
                 }
             }
         } else {
-            // 이미 좋아요 함 
+            // 이미 좋아요 함
             query = {
                 $pull : {
-                    'reply.replyLikeUsers' : userId
+                    'reply.$.replyLikeUsers' : userId
                 }
             }
         }
-        Post.updateReply(userId, postId, replyId, query, (err, updatedReply)=>{
+        Post.likeReply(postId, replyId, query, (err)=>{
             if (err){
                 return next(err);
             }

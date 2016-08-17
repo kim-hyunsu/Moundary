@@ -125,7 +125,7 @@ function modifyProfile(req, res, next){
                     if (err){
                         return cb(err);
                     }
-                    Post.updatePostUserInfo(userId, query, (err, result)=>{
+                    Post.updatePostUserInfo(userId, query, (err)=>{
                         if (err){
                             return cb(err);
                         }
@@ -294,7 +294,7 @@ function modifyProfile(req, res, next){
                             const queryForPost = {
                                 profileThumbnail : imageUrls[1]
                             }
-                            Post.updatePostUserInfo(userId, queryForPost, (err, results)=>{
+                            Post.updatePostUserInfo(userId, queryForPost, (err)=>{
                                 if (err){
                                     // user model에서 업데이트된 거 원래 것으로 복구
                                     // 업로드 된 url 삭제

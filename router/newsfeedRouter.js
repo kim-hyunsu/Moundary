@@ -319,7 +319,7 @@ function likePost(req, res, next){
             // 이미 좋아요 한 경우
             query = {$pull : {postLikeUsers : userId}};
         }
-        Post.updatePost(userId, postId, query, (err, updatedPost)=>{
+        Post.likePost(postId, query, (err, updatedPost)=>{
             if (err){
                 return next(err);
             }
