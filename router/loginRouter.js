@@ -16,7 +16,7 @@ router.post('/auth/kakao', kakaoLogin);
 // user enters (policyAgree, personalInfoAgree, nickname, profileImg, coveImg, userAddress, babyAge);
 function signup(req, res, next){
     const now = new Date();
-    const userId = req.query.userId;
+    const uuid = req.body.uuid;
     console.log('parsed the multipart request');
     const coverImg = req.body.coverImg;
     const profileImg = req.body.profileImg;
@@ -30,6 +30,7 @@ function signup(req, res, next){
             return next(err);
         }
         var query = {
+            uuid : uuid,
             nickname : req.body.nickname,
             profileImg : profileImageUrl,
             profileThumbnail : profileThumbnailUrl,

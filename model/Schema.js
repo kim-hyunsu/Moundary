@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const postSchema = Schema({
-    postId : Schema.Types.ObjectId,
     category : Number,
     postAddress : {
         area1: String,
@@ -34,7 +33,7 @@ const postSchema = Schema({
 module.exports.post = postSchema;
 
 const userSchema = Schema({
-    userId : Schema.Types.ObjectId,
+    uuid : String,
     policyAgreeDate : { type : Date, default : Date.now},
     personalInfoAgreeDate : { type : Date, default : Date.now },
     profileImg : String,

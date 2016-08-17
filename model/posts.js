@@ -305,7 +305,7 @@ Post.deleteExpiredPosts = function(callback){
 }
 
 Post.updatePost = function(userId, postId, query, callback){
-    post.findOneAndUpdate({_id : postId, userId : userId}, query, {new : true, upsert : true, fields : '-reply'})
+    post.findOneAndUpdate({_id : postId, userId : userId}, query, {new : true, fields : '-reply'})
         .then((doc)=>{
             callback(null, doc);
         }, (err)=>{

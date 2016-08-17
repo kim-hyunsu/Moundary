@@ -17,7 +17,7 @@ router.route('/info/detail')
     .get(infoDetail);
 
 // 정보글 좋아요
-router.put('/post/like', likeInfo);
+router.put('/info/like', likeInfo);
 
 function infoList(req, res, next){
     console.log('get (get) request of /info');
