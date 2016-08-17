@@ -385,7 +385,7 @@ Post.checkPostLiked = function(userId, postId, callback){
 }
 
 Post.checkReplyLiked = function(userId, postId, replyId, callback){
-    post.findOne({_id : postId, 'reply._id' : replyId, replyLikeUsers : userId})
+    post.findOne({_id : postId, 'reply._id' : replyId, 'reply.replyLikeUsers' : userId})
         .count((err, count)=>{
             console.log('COUNT', count);
             if (err){
