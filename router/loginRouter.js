@@ -53,8 +53,7 @@ function signup(req, res, next){
         // if (req.body.personalInfoAgreeDate){
         //     query.personalInfoAgreeDate = req.body.personalInfoAgreeDate;
         // }
-        console.log(userId);
-        User.updateUser(userId, query, (err, result)=>{
+        User.createUser(query, (err, result)=>{
             if (err){
                 return next(err);
             }
@@ -65,15 +64,15 @@ function signup(req, res, next){
             res.json(data);
         });
     }
-    s3upload.original(profileImg.path, profileImg.type, 'profileImg', userId, (err, profileImageUrl)=>{
+    s3upload.original(profileImg.path, profileImg.type, 'profileImg', uuid, (err, profileImageUrl)=>{
         if (err){
             return next(err);
         }
-        s3upload.thumbnail(profileImg.path, profileImg.type, 'profileThumbnail', userId, (err, profileThumbnailUrl)=>{
+        s3upload.thumbnail(profileImg.path, profileImg.type, 'profileThumbnail', uuid, (err, profileThumbnailUrl)=>{
             if (err){
                 return next(err);
             }
-            s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, coverImageUrl)=>{
+            s3upload.original(coverImg.path, coverImg.type, 'coverImg', uuid, (err, coverImageUrl)=>{
                 if (err){
                     return next(err);
                 }

@@ -363,7 +363,7 @@ function modifyProfile(req, res, next){
                 } else { // delete image
                     if ( prevImageUrl.profileImg || prevImageUrl.profileThumbnail ){
                         //originallly has a image, just update at db, delete at s3 and return updated profile
-                        Uesr.updateUser(userId, query, (err, updateUser)=>{
+                        User.updateUser(userId, query, (err, updateUser)=>{
                             if (err){
                                 return cb(err);
                             }

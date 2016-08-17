@@ -283,10 +283,24 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
         for(var key in userInfo){
             query['reply.$.'+key] = userInfo[key];
         }
-        post.update({'reply.userId' : userId}, query, {multi:true}, (err,results)=>{
+        post.find({'reply.userId' : userId}, (err, docs)=>{
             if (err){
                 return callback(err, null);
             }
+            async.each(docs, (ele, postCb)=>{
+                async.each(ele.reply, (item, replyCb)=>{
+                    for(var key in userInfo){
+                        reply[key] = userInfo[key];
+                    }
+                    replyCb();
+                }, (err)=>{
+                    if (err){
+                        return replyCb(err, null);
+                    }
+                });
+            }, (err)=>{
+
+            });
             result.results = results;
             callback(null, result); //결과값 제대로 정하기
         });
