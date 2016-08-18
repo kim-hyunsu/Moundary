@@ -19,6 +19,7 @@ const postSchema = Schema({
     postContent : String,
     postDate : { type : Date, default : Date.now}, //default>>> now
     postLikeUsers : [Schema.Types.ObjectId],
+    postLikeCount : {type : Number, default : 0},
     replyCount : { type : Number, default : 0}, //default
     reply : [{
         userId : Schema.Types.ObjectId,
@@ -26,6 +27,7 @@ const postSchema = Schema({
         nickname : String,  
         replyContent : String,
         replyDate : { type : Date, default : Date.now},
+        replyLikeCount : {type : Number, default: 0},
         replyLikeUsers : [Schema.Types.ObjectId] 
     }]
 });

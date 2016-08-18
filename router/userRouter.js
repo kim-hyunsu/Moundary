@@ -32,7 +32,18 @@ router.get('/friend/candidate', friendCandidates)
 router.put('/friend/:request', requestFriend)
 
 function searchUsers(req, res, next){
-
+    const userId = req.query.userId;
+    const nickname = req.query.nickname;
+    User.getUsersByNick(userId, nickname, (err, users)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : users
+        }
+        res.json(data);
+    });
 }
 
 function friendCandidates(req, res, next){

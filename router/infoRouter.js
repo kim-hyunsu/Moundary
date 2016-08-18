@@ -38,37 +38,22 @@ function infoList(req, res, next){
         console.log('Got information of near by posts')
         const myAddress = results.userAddress || null;
         delete results.userAddress;
-        async.each(results, (ele, cb)=>{
-            if (ele.postLikeUsers.indexOf(userId) == -1){
-                ele.myLike = false;
-            }
-            else{
-                ele.myLike = true;
-            }
-            // delete ele.postLikeUsers;
-            cb();
-        }, (err)=>{
-            if (err){
-                return next(err);
-            }
-            var data = {
-                msg : 'success',
-                myAddress : myAddress,
-                page : {
-                    postCount : results.length
-                },
-                data : results
-            }
-            if (results.length ==0 ){
-                data.page.endPost = null;
-            }
-            else{
-                data.page.endPost = results[results.length-1]._id
-            }
-            res.json(data);
-        });
+        var data = {
+            msg : 'success',
+            myAddress : myAddress,
+            page : {
+                postCount : results.length
+            },
+            data : results
+        }
+        if (results.length ==0 ){
+            data.page.endPost = null;
+        }
+        else{
+            data.page.endPost = results[results.length-1]._id
+        }
+        res.json(data);
     }
-
     if (Object.keys(postAddress).length == 0){
         console.log('No postAddress querystring');
         Post.getInfoPostsNearby(endPost, userId, category, postCount, callback);
@@ -363,10 +348,10 @@ function likeInfo(req, res, next){
         }
         if (!liked){
             // 아직 좋아요 안 한 경우
-            query = {$push : {postLikeUsers : userId}}; // db에 likeCount 넣을지 말지 정하기(만약 db쿼리에서 바로 결과 mylike를 기록할 수 있다면 likeCount를 넣고 불가능하다면 그냥 도출된 postLikeUsers에서 length계산       
+            query = {$push : {postLikeUsers : userId}, $inc : {postLikeCount : 1}};
         } else {
             // 이미 좋아요 한 경우
-            query = {$pull : {postLikeUsers : userId}};
+            query = {$pull : {postLikeUsers : userId}, $inc : {postLikeCount : -1}};
         }
         Post.likePost(postId, query, (err, updatedPost)=>{
             if (err){

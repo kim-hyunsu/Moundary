@@ -231,6 +231,11 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
     });
 }
 
+// 입력된 닉네임과 유사한 닉네임의 유저들 검색
+User.getUsersByNick = function(userId, nickname, callback){
+    
+}
+
 // 이미지 삭제를 위해 기존 이미지 url 얻기
 User.getImageUrl = function(what, userId, callback){
     user.findOne({_id : userId}, what, (err, doc)=>{

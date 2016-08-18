@@ -28,14 +28,73 @@ Post.getPosts = function(endPost, userId, count, callback){
             var hasFriend = 1;
             switch(friendList.length){
                 case 0:
-                promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply').limit(count);
+                var projection = { 
+                    category : 1, 
+                    postAddress : 1, 
+                    due : 1, 
+                    nickname : 1, 
+                    profileThumbnail : 1, 
+                    postImg : 1, 
+                    postThumbnail : 1,
+                    postContent : 1,  
+                    userId: 1, 
+                    postLikeUsers: 1,
+                    replyCount : 1,
+                    postLikeCount : 1,
+                    reply : 1,
+                    isLiked : {
+                        $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
+                    }
+                }
+                promise = post.aggregate().match({_id:{$lt: mongoose.Types.ObjectId(endPost)}}).project(projection);
                 hasFriend = 0;
                 default:
-                promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply')
-                            .where('userId').in(friendList)
-                            .limit(count)
+                // promise = post.find({_id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply')
+                //             .or([{userId : {$in: friendList}},{'reply.userId' : {$in:friendList}}])
+                //             .limit(count)
+                var projectionWithReply = { 
+                    category : 1, 
+                    postAddress : 1, 
+                    due : 1, 
+                    nickname : 1, 
+                    profileThumbnail : 1, 
+                    postImg : 1, 
+                    postThumbnail : 1,
+                    postContent : 1,  
+                    userId: 1, 
+                    postLikeUsers: 1,
+                    replyCount : 1,
+                    postLikeCount : 1,
+                    reply : 1,
+                    postLikedAndFriend : {
+                        $setIntersection : ['$postLikeUsers', friendList]
+                    },
+                    isLiked : {
+                        $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
+                    }
+                }
+                promise = post.aggregate()
+                            .match({_id:{$lt: mongoose.Types.ObjectId(endPost)}})
+                            .project(projectionWithReply)
+                            .match({ $or : [{userId : {$in: friendList}},{'reply.userId' : {$in:friendList}}, {postLikedAndFriend : {$ne : []}}]})                 
             }
-            promise.sort({_id:-1}).lean().then((results)=>{
+            var projectionWithMyLike = { 
+                category : 1, 
+                postAddress : 1, 
+                due : 1, 
+                nickname : 1, 
+                profileThumbnail : 1, 
+                postImg : 1, 
+                postThumbnail : 1,
+                postContent : 1,  
+                userId: 1, 
+                postLikeCount : 1,
+                replyCount : 1,
+                myLike : {
+                    $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
+                }
+            }
+            promise.project(projectionWithMyLike).limit(count).sort({_id:-1}).then((results)=>{
                 console.log('=============RESULTS==============');
                 console.log(results);
                 console.log('==================================');
@@ -65,6 +124,39 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         const userAddress = results.userAddress.toObject();
         console.log('USERADDRESS >>>', userAddress);
         var query = {};
+        var projectionWithIsLike = { 
+            category : 1, 
+            postAddress : 1, 
+            due : 1, 
+            nickname : 1, 
+            profileThumbnail : 1, 
+            postImg : 1, 
+            postThumbnail : 1,
+            postContent : 1,  
+            userId: 1, 
+            postLikeUsers: 1,
+            replyCount : 1,
+            postLikeCount : 1,
+            isLiked : {
+                $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
+            }
+        }
+        var projectionWithMyLike = {
+            category : 1, 
+            postAddress : 1, 
+            due : 1, 
+            nickname : 1, 
+            profileThumbnail : 1, 
+            postImg : 1, 
+            postThumbnail : 1,
+            postContent : 1,  
+            userId: 1, 
+            postLikeCount : 1,
+            replyCount : 1,
+            myLike : {
+                $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
+            }
+        }
         for(var key in userAddress){
             query["postAddress."+key] = userAddress[key];
         }
@@ -73,12 +165,14 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
             query.category = category;
         }
         console.log('QUERY>>>', query);
-        var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
+        // var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
+        var promise = post.aggregate().match({_id : { $lt : mongoose.Types.ObjectId(endPost)}})
+                        .match(query).project(projectionWithIsLike).project(projectionWithMyLike)
         if (!category){
-            promise = promise.where('category').ne(0);
+            promise = promise.match({category : {$ne : 0}});
         }
         console.log('CHECK PROMISE');
-        promise.limit(count).sort({_id:-1}).lean()
+        promise.limit(count).sort({_id:-1})
             .then((result)=>{
                 console.log('POST FOUND >>>', result);
                 result.userAddress = userAddress;
@@ -98,17 +192,52 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         count = 60;
     }
     var query = {};
+    var projectionWithIsLike = { 
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1, 
+        postThumbnail : 1,
+        postContent : 1,  
+        userId: 1, 
+        postLikeUsers: 1,
+        replyCount : 1,
+        postLikeCount : 1,
+        isLiked : {
+            $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
+        }
+    }
+    var projectionWithMyLike = {
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1, 
+        postThumbnail : 1,
+        postContent : 1,  
+        userId: 1, 
+        postLikeCount : 1,
+        replyCount : 1,
+        myLike : {
+            $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
+        }
+    }
     for(var key in postAddress){
         query["postAddress."+key] = postAddress[key];
     }
     if (category){
         query.category = category;
     }
-    var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
+    // var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
+    var promise = post.aggregate().match({_id : {$lt : mongoose.Types.ObjectId(endPost)}})
+                    .match(query).project(projectionWithIsLike).project(projectionWithMyLike)
     if (!category){
-        promise = promise.where('category').ne(0);
+        promise = promise.match({category : {$ne : 0}});
     }
-    promise.limit(count).sort({_id:-1}).lean()
+    promise.limit(count).sort({_id:-1})
         .then((results)=>{
             callback(null, results);
         }, (err)=>{
@@ -124,7 +253,42 @@ Post.getMyPosts = function(endPost, userId, count, callback){
     if(!count){
         count = 10;
     }
-    post.find({userId : userId, _id:{$lt: mongoose.Types.ObjectId(endPost)}}, '-reply').limit(count).sort({_id:-1}).lean()
+    var projectionWithIsLike = { 
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1, 
+        postThumbnail : 1,
+        postContent : 1,  
+        userId: 1, 
+        postLikeUsers: 1,
+        replyCount : 1,
+        postLikeCount : 1,
+        isLiked : {
+            $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
+        }
+    }
+    var projectionWithMyLike = {
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1, 
+        postThumbnail : 1,
+        postContent : 1,  
+        userId: 1,
+        postLikeCount : 1,
+        replyCount : 1,
+        myLike : {
+            $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
+        }
+    }
+    post.aggregate().match({userId : mongoose.Types.ObjectId(userId), _id : {$lt : mongoose.Types.ObjectId(endPost)}})
+        .project(projectionWithIsLike).project(projectionWithMyLike)
+        .limit(count).sort({_id:-1})
         .then((results)=>{
             callback(null, results);
         }, (err)=>{
@@ -213,39 +377,68 @@ Post.getPostDetail = function(postId, callback){
 }
 
 // 댓글 가져오기
-Post.getReplies = function(endReply, postId, count, callback){
+Post.getReplies = function(endReply, userId, postId, count, callback){
     console.log('getting replies...');
 
     // endReply = endReply || "000000000000000000000000"; //object id of 1970.01.01 09:00:00
     endReply = endReply || 0;    
     count = count || 20;
 
-    post.findOne({ _id : postId}, 'reply -_id')
-        .slice('reply', [endReply, count])
-        .then((results)=>{
-            console.log('REPLY FOUND >>>', results.reply);
-            endReply = endReply+results.reply.length;
-            console.log('ENDREPLY ADDED >>>', results.reply);
-            callback(null, results.reply, endReply);
-        }, (err)=>{
-            console.log('REPLY NOT FOUND');
-            callback(err, null, null);
-        });
-    // post.aggregate()
-    //     .match({_id : mongoose.Types.ObjectId(postId)})
-    //     .project('reply -_id')
-    //     .unwind('reply')
-    //     .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
-    //     .limit(count)
-    //     .sort({'reply._id' : -1})
+    // post.findOne({ _id : postId}, 'reply -_id')
+    //     .slice('reply', [endReply, count])
     //     .then((results)=>{
-    //         console.log('REPLY FOUND >>>', results);
-    //         // endReply = results[0].reply[0]._id;
-    //         callback(null, results, endReply);
+    //         console.log('REPLY FOUND >>>', results.reply);
+    //         endReply = endReply+results.reply.length;
+    //         console.log('ENDREPLY ADDED >>>', results.reply);
+    //         callback(null, results.reply, endReply);
     //     }, (err)=>{
     //         console.log('REPLY NOT FOUND');
     //         callback(err, null, null);
     //     });
+    console.log('USERID>>>', userId);
+    var projectionWithIsLike = {
+        'reply._id' : 1,
+        'reply.userId' : 1,
+        'reply.profileThumbnail' : 1,
+        'reply.replyContent' : 1,
+        'reply.nickname' : 1,
+        'reply.replyDate' : 1,
+        'reply.replyLikeCount' : 1,
+        'reply.replyLikeUsers' : 1,
+        'reply.isLiked' : {
+            $setIntersection : ['$reply.replyLikeUsers', [mongoose.Types.ObjectId]]
+        }
+    }
+    var projectionWithMyLike = {
+        'reply._id' : 1,
+        'reply.userId' : 1,
+        'reply.profileThumbnail' : 1,
+        'reply.replyContent' : 1,
+        'reply.nickname' : 1,
+        'reply.replyDate' : 1,
+        'reply.replyLikeCount' : 1,
+        'reply.myLike' : {
+            $cond : {
+                if : {$ne : ['$reply.isLiked', [] ]}, then : true, else : false
+            }
+        }
+    }
+    post.aggregate()
+        .match({_id : mongoose.Types.ObjectId(postId)})
+        .project('reply -_id')
+        .project({reply : {$slice : ['$reply', endReply, count]}})
+        // .unwind('reply')
+        .project(projectionWithIsLike).project(projectionWithMyLike)
+        .limit(count)
+        .sort({'reply._id' : -1})
+        .then((results)=>{
+            console.log('REPLY FOUND >>>', results);
+            // endReply = results[0].reply[0]._id; =>> todo
+            callback(null, results, endReply);
+        }, (err)=>{
+            console.log('REPLY NOT FOUND');
+            callback(err, null, null);
+        });
 }
 
 // 포스트  document에 댓글 넣기
@@ -261,7 +454,7 @@ Post.recordReply = function(reply, callback){
         console.log('THE RESULT', results);
         reply.profileThumbnail = results.profileThumbnail;
         reply.nickname = results.nickname;
-        post.findOneAndUpdate({_id : reply.postId}, {$pushAll: {reply : [reply]}, $inc: {replyCount : 1}}, {new : true, upsert : true, fields : 'reply'}, (err, doc)=>{
+        post.findOneAndUpdate({_id : reply.postId}, {$push: {reply : reply}, $inc: {replyCount : 1}}, {new : true, upsert : true, fields : 'reply'}, (err, doc)=>{
             if (err){
                 return callback(err, null); 
             }

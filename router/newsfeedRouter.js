@@ -35,39 +35,21 @@ function newsList(req, res, next){
         }
         const hasFriend = results.hasFriend;
         delete results.hasFriend;
-        async.each(results, (ele, cb)=>{
-            const mongoose = require('mongoose');
-            console.log('BEFORE>>>', ele.myLike);
-            console.log('USERID', userId, typeof userId);
-            console.log('OBJECT USERID', mongoose.Types.ObjectId(userId), typeof mongoose.Types.ObjectId(userId));
-            console.log('POST LIKE USERS', ele.postLikeUsers[0], typeof ele.postLikeUsers[0]);
-            console.log('CHECK EQUALITY', mongoose.Types.ObjectId(userId)==ele.postLikeUsers[0]);
-            if (ele.postLikeUsers.indexOf(userId) == -1){
-                ele.myLike = false;
-            }
-            else {
-                ele.myLike = true;
-            }
-            // delete ele.postLikeUsers;
-            console.log('AFTER>>>', ele.myLike);
-            cb();
-        }, (err)=>{
-            var data = {
-                msg : 'success',
-                hasFriend : hasFriend,
-                page : {
-                    postCount : results.length
-                },
-                data : results
-            }
-            if (results.length ==0 ){
-                data.page.endPost = null;
-            }
-            else{
-                data.page.endPost = results[results.length-1]._id
-            }
-            res.json(data);
-        });
+        var data = {
+            msg : 'success',
+            hasFriend : hasFriend,
+            page : {
+                postCount : results.length
+            },
+            data : results
+        }
+        if (results.length ==0 ){
+            data.page.endPost = null;
+        }
+        else{
+            data.page.endPost = results[results.length-1]._id
+        }
+        res.json(data);
     });
 }
 
@@ -82,34 +64,20 @@ function myPostList(req, res, next){
         if (err){
             return next(err);
         }
-        async.each(results, (ele, cb)=>{
-            if (ele.postLikeUsers.indexOf(userId) == -1){
-                ele.myLike = false;
-            }
-            else {
-                ele.myLike = true;
-            }
-            // delete ele.postLikeUsers;
-            cb();
-        }, (err)=>{
-            if (err){
-                return next(err);
-            }
-            var data = {
-                msg : 'success',
-                page : {
-                    postCount : results.length
-                },
-                data : results
-            }
-            if (results.length ==0 ){
-                data.page.endPost = null;
-            }
-            else{
-                data.page.endPost = results[results.length-1]._id
-            }
-            res.json(data);
-        });
+        var data = {
+            msg : 'success',
+            page : {
+                postCount : results.length
+            },
+            data : results
+        }
+        if (results.length ==0 ){
+            data.page.endPost = null;
+        }
+        else{
+            data.page.endPost = results[results.length-1]._id
+        }
+        res.json(data);
     });
 }
 
@@ -314,10 +282,10 @@ function likePost(req, res, next){
         }
         if (!liked){
             // 아직 좋아요 안 한 경우
-            query = {$push : {postLikeUsers : userId}}; // db에 likeCount 넣을지 말지 정하기(만약 db쿼리에서 바로 결과 mylike를 기록할 수 있다면 likeCount를 넣고 불가능하다면 그냥 도출된 postLikeUsers에서 length계산       
+            query = {$push : {postLikeUsers : userId}, $inc : {postLikeCount : 1}};
         } else {
             // 이미 좋아요 한 경우
-            query = {$pull : {postLikeUsers : userId}};
+            query = {$pull : {postLikeUsers : userId}, $inc : {postLikeCount : -1}};
         }
         Post.likePost(postId, query, (err, updatedPost)=>{
             if (err){

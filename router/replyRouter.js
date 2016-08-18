@@ -19,7 +19,7 @@ function replyList(req, res, next){
     const postId = req.query.postId;
     const endReply = req.query.endReply;
     const replyCount = parseInt(req.query.replyCount);
-    Post.getReplies(endReply, postId, replyCount, (err, results, endReply)=>{
+    Post.getReplies(endReply, userId, postId, replyCount, (err, results, endReply)=>{
         if (err){
             return next(err);
         }
@@ -132,6 +132,9 @@ function likeReply(req, res, next){
             query = {
                 $push : {
                     'reply.$.replyLikeUsers' : userId
+                },
+                $inc : {
+                    'reply.$.replyLikeCount' : 1
                 }
             }
         } else {
@@ -139,6 +142,9 @@ function likeReply(req, res, next){
             query = {
                 $pull : {
                     'reply.$.replyLikeUsers' : userId
+                },
+                $inc : {
+                    'reply.$.replyLikeCount' : -1
                 }
             }
         }
