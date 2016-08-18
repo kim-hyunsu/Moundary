@@ -245,6 +245,10 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         });
 }
 
+Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
+
+}
+
 // 내 이야기 불러오기
 Post.getMyPosts = function(endPost, userId, count, callback){
     if(!endPost){
