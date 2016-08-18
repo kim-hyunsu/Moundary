@@ -405,9 +405,9 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
         'reply.replyDate' : 1,
         'reply.replyLikeCount' : 1,
         'reply.replyLikeUsers' : 1,
-        'reply.isLiked' : {
-            $setIntersection : ['$reply.replyLikeUsers', [mongoose.Types.ObjectId]]
-        }
+        // 'reply.isLiked' : {
+        //     $setIntersection : ['$reply.replyLikeUsers', [mongoose.Types.ObjectId]]
+        // }
     }
     var projectionWithMyLike = {
         'reply._id' : 1,
@@ -417,24 +417,30 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
         'reply.nickname' : 1,
         'reply.replyDate' : 1,
         'reply.replyLikeCount' : 1,
+        // 'reply.myLike' : {
+        //     $cond : {
+        //         if : {$ne : ['$reply.isLiked', [] ]}, then : true, else : false
+        //     }
+        // }
         'reply.myLike' : {
-            $cond : {
-                if : {$ne : ['$reply.isLiked', [] ]}, then : true, else : false
-            }
+            $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
         }
     }
     post.aggregate()
         .match({_id : mongoose.Types.ObjectId(postId)})
         .project('reply -_id')
         .project({reply : {$slice : ['$reply', endReply, count]}})
+        // .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
+        // .project({'reply.$' : 1})
         // .unwind('reply')
-        .project(projectionWithIsLike).project(projectionWithMyLike)
+        .project(projectionWithIsLike)
         .limit(count)
         .sort({'reply._id' : -1})
         .then((results)=>{
             console.log('REPLY FOUND >>>', results);
             // endReply = results[0].reply[0]._id; =>> todo
-            callback(null, results, endReply);
+            endReply = endReply+results[0].reply.length
+            callback(null, results[0].reply, endReply);
         }, (err)=>{
             console.log('REPLY NOT FOUND');
             callback(err, null, null);
@@ -535,7 +541,7 @@ Post.removePost = function(userId, postId, callback){
         }, (err)=>{
             callback(err, null);
         });
-}
+}   
 
 Post.likePost = function(postId, query, callback){
     post.findOneAndUpdate({_id : postId}, query, {new : true, fields : '-reply'})
