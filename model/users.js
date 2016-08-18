@@ -233,7 +233,13 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
 
 // 입력된 닉네임과 유사한 닉네임의 유저들 검색
 User.getUsersByNick = function(userId, nickname, callback){
-    
+    user.find({nickname : new RegExp('^'+nickname)}, 'nickname profileThumbnail userAddress baby')
+        .where('_id').ne(userId)
+        .then((docs)=>{
+            callback(null, docs);
+        }, (err)=>{
+            callback(err, null);
+        });
 }
 
 // 이미지 삭제를 위해 기존 이미지 url 얻기

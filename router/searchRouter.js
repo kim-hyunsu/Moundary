@@ -8,7 +8,9 @@ router.get('/search', searchPost);
 router.get('/search/candidate', recommandWords);
 
 function searchPost(req, res, next){
-
+    const userId = req.query.userId,
+    const word = req.query.word;
+    
 }
 
 function recommandWords(req, res, next){
