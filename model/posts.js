@@ -433,7 +433,7 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
         // .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
         // .project({'reply.$' : 1})
         // .unwind('reply')
-        .project(projectionWithIsLike)
+        .project(projectionWithIsLike).project(projectionWithMyLike)
         .limit(count)
         .sort({'reply._id' : -1})
         .then((results)=>{
