@@ -376,7 +376,7 @@ function modifyProfile(req, res, next){
                         //originallly has a image, just update at db, delete at s3 and return updated profile
                         query = {
                             profileImg : "http://s3.ap-northeast-2.amazonaws.com/moundary/profileImg/emptyProfileImage.jpg",
-                            profileThumbnail : "http://s3.ap-northeast-2.amazonaws.com/moundary/profileImg/emptyProfileImage.jpg"
+                            profileThumbnail : "http://s3.ap-northeast-2.amazonaws.com/moundary/profileThumbnail/emptyProfileImage.jpg"
                         }
                         User.updateUser(userId, query, (err, updateUser)=>{
                             if (err){
