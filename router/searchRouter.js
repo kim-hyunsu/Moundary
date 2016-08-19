@@ -35,7 +35,17 @@ function searchPost(req, res, next){
 }
 
 function recommandWords(req, res, next){
-
+    const word = req.query.word;
+    Post.getcontentsKeyword(word, (err, wordList)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : wordList
+        }
+        res.json(data);
+    });
 }
 
 module.exports = router;

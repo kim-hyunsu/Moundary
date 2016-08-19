@@ -234,6 +234,7 @@ Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
     }
     post.aggregate()
         .match({_id : {$lt : mongoose.Types.ObjectId(endPost)}, postContent : new RegExp(word)})
+        .match({category : {$ne : 0}})
         .project(projection)
         .limit(count).sort({_id : -1})
         .then((result)=>{
@@ -586,6 +587,16 @@ Post.getImageUrl = function(what, postId, callback){
             return callback(err, null);
         }
         callback(null, doc);
+    });
+}
+
+Post.getContentsKeyword = function(word, callback){
+    post.find({postContent : new RegExp(word)}, 'postContent', (err, docs)=>{
+        if (err){
+            return next(err);
+        }
+        var wordList = [];
+
     });
 }
 
