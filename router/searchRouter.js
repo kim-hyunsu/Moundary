@@ -36,7 +36,7 @@ function searchPost(req, res, next){
 
 function recommandWords(req, res, next){
     const word = req.query.word;
-    Post.getcontentsKeyword(word, (err, wordList)=>{
+    Post.getContentsKeyword(word, (err, wordList)=>{
         if (err){
             return next(err);
         }

@@ -266,7 +266,7 @@ Post.getMyPosts = function(endPost, userId, count, callback){
         postLikeCount : 1,
         replyCount : 1,
         myLike : {
-            $cond : {if : { $ne : [[mognoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
+            $cond : {if : { $ne : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
         }
     }
     post.aggregate().match({userId : mongoose.Types.ObjectId(userId), _id : {$lt : mongoose.Types.ObjectId(endPost)}})
@@ -590,13 +590,18 @@ Post.getImageUrl = function(what, postId, callback){
     });
 }
 
+// 검색 키워드 얻기
 Post.getContentsKeyword = function(word, callback){
     post.find({postContent : new RegExp(word)}, 'postContent', (err, docs)=>{
         if (err){
             return next(err);
         }
         var wordList = [];
+        async.each(docs, (ele, cb)=>{
+            const cleanSentence = ele.postContent.replace()
+        }, (err)=>{
 
+        });
     });
 }
 
