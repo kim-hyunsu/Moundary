@@ -592,23 +592,30 @@ Post.getImageUrl = function(what, postId, callback){
 
 // 검색 키워드 얻기
 Post.getContentsKeyword = function(word, callback){
-    post.find({postContent : new RegExp('\s+'+word+'|'+'^'+word)}, 'postContent', (err, docs)=>{
-        if (err){
-            return next(err);
-        }
-        var wordList = [];
-        console.log(docs);
-        async.each(docs, (ele, cb)=>{
-            key = new RegExp('\s*'+word+'.*\s')
-            // console.log('???"',key.exec(ele.postContent));
-            cb();
+    post.find({postContent : new RegExp('\\s+'+word+'|'+'^'+word, 'gi')}, 'postContent').limit(6)
+        .then((docs)=>{
+            var wordList = [];
+            async.each(docs, (ele, cb)=>{
+                key = new RegExp('\\s*'+word+'\\S*\\s*|^'+word+'\\S*', 'gi');
+                wordList = wordList.concat(ele.postContent.match(key));
+                cb();
+            }, (err)=>{
+                if (err){
+                    return callback(err, null);
+                }
+                wordList.sort((a,b)=>{
+                    return a.length-b.length;
+                });
+                wordList = wordList.splice(0, 6);
+                newlist = [];
+                wordList.forEach(item=>{
+                    newlist.push(item.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/\s]/gi, ''));
+                });
+                callback(null, newlist);
+            });
         }, (err)=>{
-            if (err){
-                return callback(err, null);
-            }
-            callback(null, wordList)
+            callback(err, null);
         });
-    });
 }
 
 module.exports = Post;
