@@ -175,7 +175,7 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         count = 60;
     }
     var query = {};
-    var projectionWithMyLike = {
+    var projection = {
         category : 1, 
         postAddress : 1, 
         due : 1, 
@@ -253,7 +253,7 @@ Post.getMyPosts = function(endPost, userId, count, callback){
     if(!count){
         count = 10;
     }
-    var projectionWithMyLike = {
+    var projection = {
         category : 1, 
         postAddress : 1, 
         due : 1, 
