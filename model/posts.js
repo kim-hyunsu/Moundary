@@ -592,15 +592,21 @@ Post.getImageUrl = function(what, postId, callback){
 
 // 검색 키워드 얻기
 Post.getContentsKeyword = function(word, callback){
-    post.find({postContent : new RegExp(word)}, 'postContent', (err, docs)=>{
+    post.find({postContent : new RegExp('\s+'+word+'|'+'^'+word)}, 'postContent', (err, docs)=>{
         if (err){
             return next(err);
         }
         var wordList = [];
+        console.log(docs);
         async.each(docs, (ele, cb)=>{
-            const cleanSentence = ele.postContent.replace()
+            key = new RegExp('\s*'+word+'.*\s')
+            // console.log('???"',key.exec(ele.postContent));
+            cb();
         }, (err)=>{
-
+            if (err){
+                return callback(err, null);
+            }
+            callback(null, wordList)
         });
     });
 }
