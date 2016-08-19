@@ -18,6 +18,7 @@ const newsfeedRouter = require('./router/newsfeedRouter.js');
 const infoRouter = require('./router/infoRouter.js');
 const replyRouter = require('./router/replyRouter.js');
 const userRouter = require('./router/userRouter.js');
+const searchRouter = require('./router/searchRouter');
 
 // delete expired information posts every hours
 var mongoConnectionString = "mongodb://52.78.98.25:27017/moundary";
@@ -51,6 +52,7 @@ app.use(newsfeedRouter);
 app.use(infoRouter);
 app.use(replyRouter);
 app.use(userRouter);
+app.use(searchRouter);
 app.use(errorCtrl);
 app.listen(3000);
 

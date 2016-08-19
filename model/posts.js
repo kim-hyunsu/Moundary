@@ -124,24 +124,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         const userAddress = results.userAddress.toObject();
         console.log('USERADDRESS >>>', userAddress);
         var query = {};
-        var projectionWithIsLike = { 
-            category : 1, 
-            postAddress : 1, 
-            due : 1, 
-            nickname : 1, 
-            profileThumbnail : 1, 
-            postImg : 1, 
-            postThumbnail : 1,
-            postContent : 1,  
-            userId: 1, 
-            postLikeUsers: 1,
-            replyCount : 1,
-            postLikeCount : 1,
-            isLiked : {
-                $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
-            }
-        }
-        var projectionWithMyLike = {
+        var projection = {
             category : 1, 
             postAddress : 1, 
             due : 1, 
@@ -154,7 +137,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
             postLikeCount : 1,
             replyCount : 1,
             myLike : {
-                $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
+                $cond : {if : { $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
             }
         }
         for(var key in userAddress){
@@ -167,7 +150,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         console.log('QUERY>>>', query);
         // var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
         var promise = post.aggregate().match({_id : { $lt : mongoose.Types.ObjectId(endPost)}})
-                        .match(query).project(projectionWithIsLike).project(projectionWithMyLike)
+                        .match(query).project(projection);
         if (!category){
             promise = promise.match({category : {$ne : 0}});
         }
@@ -192,23 +175,6 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         count = 60;
     }
     var query = {};
-    var projectionWithIsLike = { 
-        category : 1, 
-        postAddress : 1, 
-        due : 1, 
-        nickname : 1, 
-        profileThumbnail : 1, 
-        postImg : 1, 
-        postThumbnail : 1,
-        postContent : 1,  
-        userId: 1, 
-        postLikeUsers: 1,
-        replyCount : 1,
-        postLikeCount : 1,
-        isLiked : {
-            $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
-        }
-    }
     var projectionWithMyLike = {
         category : 1, 
         postAddress : 1, 
@@ -222,7 +188,7 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         postLikeCount : 1,
         replyCount : 1,
         myLike : {
-            $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
+            $cond : {if : { $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
         }
     }
     for(var key in postAddress){
@@ -233,7 +199,7 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
     }
     // var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
     var promise = post.aggregate().match({_id : {$lt : mongoose.Types.ObjectId(endPost)}})
-                    .match(query).project(projectionWithIsLike).project(projectionWithMyLike)
+                    .match(query).project(projection);
     if (!category){
         promise = promise.match({category : {$ne : 0}});
     }
@@ -246,7 +212,36 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
 }
 
 Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
-
+    console.log('searching posts....');
+    endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
+    count = count || 60; 
+    word = word || '';
+    var projection = {
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1,
+        postThumbnail : 1,
+        postContent : 1,  
+        userId: 1,
+        replyCount : 1,
+        postLikeCount : 1,
+        myLike : {
+            $cond : [ {$setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers']}, true, false]
+        }
+    }
+    post.aggregate()
+        .match({_id : {$lt : mongoose.Types.ObjectId(endPost)}, postContent : new RegExp(word)})
+        .project(projection)
+        .limit(count).sort({_id : -1})
+        .then((result)=>{
+            console.log('POSTS FOUND');
+            callback(null, result);
+        }, (err)=>{
+            callback(err, null);
+        });
 }
 
 // 내 이야기 불러오기
@@ -256,23 +251,6 @@ Post.getMyPosts = function(endPost, userId, count, callback){
     }   
     if(!count){
         count = 10;
-    }
-    var projectionWithIsLike = { 
-        category : 1, 
-        postAddress : 1, 
-        due : 1, 
-        nickname : 1, 
-        profileThumbnail : 1, 
-        postImg : 1, 
-        postThumbnail : 1,
-        postContent : 1,  
-        userId: 1, 
-        postLikeUsers: 1,
-        replyCount : 1,
-        postLikeCount : 1,
-        isLiked : {
-            $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
-        }
     }
     var projectionWithMyLike = {
         category : 1, 
@@ -287,11 +265,11 @@ Post.getMyPosts = function(endPost, userId, count, callback){
         postLikeCount : 1,
         replyCount : 1,
         myLike : {
-            $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
+            $cond : {if : { $ne : [[mognoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
         }
     }
     post.aggregate().match({userId : mongoose.Types.ObjectId(userId), _id : {$lt : mongoose.Types.ObjectId(endPost)}})
-        .project(projectionWithIsLike).project(projectionWithMyLike)
+        .project(projection)
         .limit(count).sort({_id:-1})
         .then((results)=>{
             callback(null, results);

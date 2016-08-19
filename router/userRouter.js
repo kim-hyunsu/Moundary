@@ -247,7 +247,7 @@ function modifyProfile(req, res, next){
                     if (prevImageUrl.coverImg){
                         // originally has a image, just update at db, delete at s3 and return updated profile
                         query = {
-                            coverImg : null
+                            coverImg : "http://s3.ap-northeast-2.amazonaws.com/moundary/coverImg/emptyCoverImage.jpg"
                         }
                         User.updateUser(userId, query, cb);
                         s3upload.delete(prevImageUrl.coverImg, (err, result)=>{

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const Post = require('../model/posts.js');
 
 // 정보글 검색
 router.get('/search', searchPost);
@@ -8,7 +9,7 @@ router.get('/search', searchPost);
 router.get('/search/candidate', recommandWords);
 
 function searchPost(req, res, next){
-    const userId = req.query.userId,
+    const userId = req.query.userId;
     const endPost = req.query.endPost;
     const postCount = req.query.postCount;
     const word = req.query.word;
@@ -16,6 +17,7 @@ function searchPost(req, res, next){
         if (err){
             return next(err);
         }
+        console.log('preparing to response');
         var data = {
             msg : 'success',
             page : {
