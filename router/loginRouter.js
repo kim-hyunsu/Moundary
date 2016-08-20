@@ -17,6 +17,7 @@ router.post('/auth/kakao', kakaoLogin);
 function signup(req, res, next){
     const now = new Date();
     const uuid = req.body.uuid;
+    const fcmToken = req.body.fcmToken;
     console.log('parsed the multipart request');
     const coverImg = req.body.coverImg;
     const profileImg = req.body.profileImg;
@@ -31,6 +32,7 @@ function signup(req, res, next){
         }
         var query = {
             uuid : uuid,
+            fcmToken : fcmToken,
             nickname : req.body.nickname,
             profileImg : profileImageUrl,
             profileThumbnail : profileThumbnailUrl,

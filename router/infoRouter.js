@@ -4,7 +4,9 @@ const pathUtil = require('path');
 const fs = require('fs');
 const async = require('async');
 const Post = require('../model/posts.js');
+const Notification = require('../model/notifications.js');
 const s3upload = require('./s3upload.js');
+const fcmPush = require('./push.js');
 // 동네소식 목록, 정보글 쓰기, 수정, 삭제
 router.route('/info')
     .get(infoList)
@@ -131,8 +133,28 @@ function writeInfo(req, res, next){
                         else{
                             console.log('Removed the temporary thumbnail image of the post')
                         }
-                    })
-                })
+                    });
+                });
+                const pushData = {
+                    pushType : 1,
+                    postId : recordedPost._id,
+                    category : recordedPost.category,
+                    pusherId : recordedPost.userId,
+                    pusherNickname : recordedPost.nickname,
+                    img : recordedPost.postThumbnail,
+                    content : recordedPost.postContent
+                }
+                Notification.addPushs(pushData, postAddress, (err, tokens)=>{
+                    if (err){
+                        console.log('FAIL TO SAVE A PUSH DATA >>>', pushData);
+                    }
+                    fcmPush(tokens, (err, response)=>{
+                        if (err){
+                            console.log('FAIL TO PUSH OF %s >>>', recordedPost._id);
+                        }
+                        console.log('PUSH COMPLETE >>>', response);
+                    });
+                });
             });
         });
     });
@@ -362,6 +384,28 @@ function likeInfo(req, res, next){
                 postId : updatedPost._id
             }
             res.json(data);
+            const pushData = {
+                pushType : 1,
+                postId : postId,
+                category : null,
+                pusherId : updatedPost.userId,
+                pusherNickname : updatedPost.nickname,
+                img : updatedPost.profileThumbnail,
+                content : null
+            }
+            if (!liked){
+                Notification.addPush(pushData, (err, token)=>{
+                    if (err){
+                        console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
+                    }
+                    fcmPush([token], (err, response)=>{
+                        if (err){
+                            console.log('FAIL TO PUSH A POST OF %s >>>', postId);
+                        }
+                        console.log('PUSH COMPLETE >>>', response);
+                    });
+                });
+            }
         }); 
     });    
 }

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Post = require('../model/posts.js');
 const User = require('../model/users.js');
+const Notification  = require('../model/notifications.js');
+const fcmPush = require('./push.js');
 
 // 댓글 가져오기, 댓글 쓰기, 댓글 수정, 댓글 삭제
 router.route('/reply')
@@ -52,6 +54,26 @@ function writeReply(req, res, next){
             data : updatedReplyList
         }
         res.json(data);
+        const pushData = {
+            pushType : 0,  // 댓글/좋아요: 0, 세일/나눔/이벤트/상점: 1, 친구신청 : 2
+            postId : reply.postId,
+            pusherId : reply.userId, // 리플 쓴 사람 아이디
+            pusherNickname : updatedReplyList[updatedReplyList.length-1].nickname, // 리플 쓴 사람 아이디
+            category: null,
+            img : updatedReplyList[updatedReplyList.length-1].profileThumbnail,
+            content : updatedReplyList[updatedReplyList.length-1].replyContent
+        }
+        Notification.addPush(pushData, (err, token)=>{ //pushData에 pullerId 추가해서 저장
+            if (err){
+                console.log('FAIL TO SAVE A PUSHDATA OR GET TOKEN OF >>>', reply.userId);
+            }
+            fcmPush([token], (err, response)=>{
+                if (err){
+                    console.log('FAIL TO PUSH A POST OF %s >>> %s', reply.postId, reply.userId);
+                }
+                console.log('PUSH COMPLETE >>>', response);
+            });
+        });
     });
 }
 

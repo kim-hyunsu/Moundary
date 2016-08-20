@@ -8,6 +8,7 @@ const Post = require('../model/posts.js');
 const Holder = require('../model/friendsHold.js');
 const s3upload = require('./s3upload.js');
 const log = console.log;
+
 // 프로필 페이지, 프로필 수정
 router.route('/user')
     .get(profile)
@@ -46,7 +47,7 @@ function searchUsers(req, res, next){
     });
 }
 
-function friendCandidates(req, res, next){
+function friendCandidates(req, res, next){  
     const userId = req.query.userId;
 
     Holder.getFriendCandidates(userId, (err, result)=>{
@@ -464,7 +465,30 @@ function requestFriend(req, res, next){
     switch(req.params.request){
         case 'apply': // 친구 신청
         log('4');
-        Holder.apply(userId, oppositeUserId, cb);
+        Holder.apply(userId, oppositeUserId, (err, result)=>{
+            if (err){
+                return cb(err, null);
+            }
+            cb(null, result);
+            const pushData = {
+                pushType : 2,
+                postId : null,
+                category : null,
+                pusherId : userId,
+                pullerId : oppositeUserId,
+                content : null
+            }
+            Notification.addPush(pushData, (err, token)=>{
+                if (err){
+                    console.log('');
+                }
+                fcmPush([token], (err, response)=>{
+                    if (err){
+                        console.log('');
+                    }
+                });
+            });
+        });
         break
 
         case 'cancel': // 친구 취소
@@ -484,6 +508,8 @@ function requestFriend(req, res, next){
         break
     }
 }
+
+
 
 
 module.exports = router;

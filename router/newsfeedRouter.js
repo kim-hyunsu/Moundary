@@ -4,6 +4,8 @@ const fs = require('fs');
 const async = require('async');
 const Post = require('../model/posts.js');
 const s3upload = require('./s3upload.js');
+const Notification  = require('../model/notifications.js');
+const fcmPush = require('./push.js');
 
 // 친구소식 목록, 글 쓰기, 수정, 삭제
 router.route('/post')
@@ -296,6 +298,28 @@ function likePost(req, res, next){
                 postId : updatedPost._id
             }
             res.json(data);
+            const pushData = {
+                pushType : 0,
+                postId : postId,
+                category : null,
+                pusherId : updatedPost.userId,
+                pusherNickname : updatedPost.nickname,
+                img : updatedPost.profileThumbnail,
+                content : null
+            }
+            if (!liked){
+                Notification.addPush(pushData, (err, token)=>{
+                    if (err){
+                        console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
+                    }
+                    fcmPush([token], (err, response)=>{
+                        if (err){
+                            console.log('FAIL TO PUSH A POST OF %s >>>', postId);
+                        }
+                        console.log('PUSH COMPLETE >>>', response);
+                    });
+                });
+            }
         }); 
     });
 }

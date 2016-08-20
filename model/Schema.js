@@ -36,6 +36,7 @@ module.exports.post = postSchema;
 
 const userSchema = Schema({
     uuid : String,
+    fcmToken : String,
     policyAgreeDate : { type : Date, default : Date.now},
     personalInfoAgreeDate : { type : Date, default : Date.now },
     profileImg : String,
@@ -55,16 +56,16 @@ const userSchema = Schema({
     baby : [{
         babyAge: Date
     }],
-    alram : {
-        mode : {type : Number, default : 1},
-        sale : { type : Boolean, default : false},
-        store : { type : Boolean, default : false},
-        event : { type : Boolean, default : false},
-        share : { type : Boolean, default : false},
-        moundary : { type : Boolean, default : true},
-        reply : { type : Boolean, default : true},
-        like : { type : Boolean, default : true}
-    }
+    // alram : {
+    //     alram : {type : Boolean, default : true},
+    //     sale : { type : Boolean, default : false},
+    //     store : { type : Boolean, default : false},
+    //     event : { type : Boolean, default : false},
+    //     share : { type : Boolean, default : false},
+    //     moundary : { type : Boolean, default : true},
+    //     reply : { type : Boolean, default : true},
+    //     like : { type : Boolean, default : true}
+    // }
 });
 
 module.exports.user = userSchema;
@@ -76,3 +77,17 @@ const holderSchema =  Schema({
 });
 
 module.exports.holder = holderSchema;
+
+const notificationSchema = Schema({
+    pushType : Number,
+    postId : Schema.Types.ObjectId,
+    pusherId : Schema.Types.ObjectId,
+    pullerId : Schema.Types.ObjectId,
+    pusherNickname : String,
+    category : Number,
+    content : String,
+    img : String
+    pushDate : {type : Date, default : Date.now}
+});
+
+module.exports.notification = notificationSchema;

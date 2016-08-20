@@ -480,7 +480,7 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
                     if (err){
                         return postCb(err);
                     }
-                    ele.save((err, saved)=>{
+                    ele.save((err   , saved)=>{
                         if (err){
                             return postCb(err);
                         }
