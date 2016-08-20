@@ -10,6 +10,7 @@ const holder = mongoose.model('hold', holderSchema);
 class User{}
 
 const log = console.log;
+
 // 친구 목록 얻기
 User.getFriends = function(endUser, userId, count, callback){
     endUser = endUser || "ffce5eef0000000000000000";
@@ -250,6 +251,10 @@ User.getImageUrl = function(what, userId, callback){
         }
         callback(null, doc);
     });
+}
+
+User.getNotifications = function(userId, callback){
+    notification.find({puller : userId}, callback);
 }
 
 module.exports = User;

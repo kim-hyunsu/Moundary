@@ -86,8 +86,9 @@ const notificationSchema = Schema({
     pusherNickname : String,
     category : Number,
     content : String,
-    img : String
-    pushDate : {type : Date, default : Date.now}
+    img : String,
+    pushDate : {type : Date, default : Date.now},
+    confirmed : {type : Boolean, default : false}
 });
 
 module.exports.notification = notificationSchema;

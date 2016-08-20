@@ -1,20 +1,17 @@
 const mongoose = require('mongoose');
 
-var db = mongoose.connection();
+var db = mongoose.connection;
 const notificationSchema = require('./Schema.js').notification;
 const userSchema = require('./Schema.js').user;
 const postSchema = require('./Schema.js').post;
 var notification = mongoose.model('notification', notificationSchema);
-var post = mongoose.model('post', userSchema);
-var user = mongoose.model('user', postSchema);
+var post = mongoose.model('post', postSchema);
+var user = mongoose.model('user', userSchema);
 
 
 class Notification{};
 
 Notification.addPush = function(pushData, callback){
-    if (pushData.pushType == 2){
-        // pusherNickname이랑 img(pusherThumbnail)추가해서 notification에 create
-    }
     post.aggregate()
         .match({_id : pushData.postId})
         .lookup({from : 'users', localField : 'userId', foreignField : '_id', as : 'puller'})
@@ -28,7 +25,7 @@ Notification.addPush = function(pushData, callback){
             pushData.pullerId = docs[0].puller._id;
             notification.create(pushData, (err, result)=>{
                 if (err){
-                    callback(err, null);
+                    console.log('FAIL TO SAVE A PUSH >>>', pushData);
                 }
             });
         }, (err)=>{
@@ -63,5 +60,13 @@ Notification.addPushs = function(pushData, postAddress, callback){
             }
             callback(null, tokens);
         });
+    });
+}
+
+Notification.confirmAlteration = function(userId, postId, callback){
+    notification.update({postId : postId, pullerId : userId}, {confirmed : true}, {multi : true}, (err, result)=>{
+        if (err){
+            callback(err);
+        }
     });
 }

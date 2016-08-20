@@ -34,6 +34,11 @@ function replyList(req, res, next){
             data : results
         }
         res.json(data);
+        Notification.confirmAlteration(userId, postId, (err)=>{
+            if (err){
+                console.log('FAIL TO CONFIRM A NOTIFICATION OF USERID >>>', userId);
+            }
+        })
     });
 }
 
@@ -59,15 +64,15 @@ function writeReply(req, res, next){
             postId : reply.postId,
             pusherId : reply.userId, // 리플 쓴 사람 아이디
             pusherNickname : updatedReplyList[updatedReplyList.length-1].nickname, // 리플 쓴 사람 아이디
-            category: null,
+            category: 0, // 댓글
             img : updatedReplyList[updatedReplyList.length-1].profileThumbnail,
             content : updatedReplyList[updatedReplyList.length-1].replyContent
         }
         Notification.addPush(pushData, (err, token)=>{ //pushData에 pullerId 추가해서 저장
             if (err){
-                console.log('FAIL TO SAVE A PUSHDATA OR GET TOKEN OF >>>', reply.userId);
+                return console.log('FAIL TO SAVE A PUSHDATA OR GET TOKEN OF >>>', reply.userId);
             }
-            fcmPush([token], (err, response)=>{
+            fcmPush([token], pushData, (err, response)=>{
                 if (err){
                     console.log('FAIL TO PUSH A POST OF %s >>> %s', reply.postId, reply.userId);
                 }

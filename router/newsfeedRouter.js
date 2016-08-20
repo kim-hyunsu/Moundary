@@ -298,21 +298,21 @@ function likePost(req, res, next){
                 postId : updatedPost._id
             }
             res.json(data);
-            const pushData = {
-                pushType : 0,
-                postId : postId,
-                category : null,
-                pusherId : updatedPost.userId,
-                pusherNickname : updatedPost.nickname,
-                img : updatedPost.profileThumbnail,
-                content : null
-            }
             if (!liked){
+                const pushData = {
+                    pushType : 0,
+                    postId : postId,
+                    category : 1, //좋아요
+                    pusherId : updatedPost.userId,
+                    pusherNickname : updatedPost.nickname,
+                    img : updatedPost.profileThumbnail,
+                    content : null
+                }
                 Notification.addPush(pushData, (err, token)=>{
                     if (err){
-                        console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
+                        return console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
                     }
-                    fcmPush([token], (err, response)=>{
+                    fcmPush([token], pushData, (err, response)=>{
                         if (err){
                             console.log('FAIL TO PUSH A POST OF %s >>>', postId);
                         }

@@ -23,14 +23,31 @@ router.get('/user/list', userList);
 // 유저 검색
 router.get('/user/search', searchUsers);
 
+// 알람 목록 가져오기
+router.get('/user/notification', notificationList);
+
 // 친구 목록 가져오기
 router.get('/friend', friendList);
 
 // 친구 신청 목록 가져오기
-router.get('/friend/candidate', friendCandidates)
+router.get('/friend/candidate', friendCandidates);
 
 // 친구 신청/취소/수락/거절/삭제
-router.put('/friend/:request', requestFriend)
+router.put('/friend/:request', requestFriend);
+
+function notificationList(req, res, next){
+    const userId = req.query.userId;
+    User.getNotifications(userId, (err, notifications)=>{
+        if (err){
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            data : notifications
+        }
+        res.json(data);
+    });
+}
 
 function searchUsers(req, res, next){
     const userId = req.query.userId;
@@ -470,19 +487,20 @@ function requestFriend(req, res, next){
                 return cb(err, null);
             }
             cb(null, result);
-            const pushData = {
-                pushType : 2,
-                postId : null,
-                category : null,
-                pusherId : userId,
-                pullerId : oppositeUserId,
-                content : null
-            }
-            Notification.addPush(pushData, (err, token)=>{
+            User.getProfile(userId, (err, profile)=>{
                 if (err){
-                    console.log('');
+                    return console.log('FAIL TO GET FCM TOKEN OF >>>', userId);
                 }
-                fcmPush([token], (err, response)=>{
+                const pushData = {
+                    pushType : 2,
+                    postId : null,
+                    category : null,
+                    pusherId : userId,
+                    pusherNickname : profile.nickname,
+                    img : profile.profileThumbnail,
+                    content : null
+                }
+                fcmPush([profile.fcmToken], pushData, (err, response)=>{
                     if (err){
                         console.log('');
                     }

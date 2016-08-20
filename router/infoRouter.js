@@ -146,9 +146,9 @@ function writeInfo(req, res, next){
                 }
                 Notification.addPushs(pushData, postAddress, (err, tokens)=>{
                     if (err){
-                        console.log('FAIL TO SAVE A PUSH DATA >>>', pushData);
+                        return console.log('FAIL TO SAVE A PUSH DATA >>>', pushData);
                     }
-                    fcmPush(tokens, (err, response)=>{
+                    fcmPush(tokens, pushData, (err, response)=>{
                         if (err){
                             console.log('FAIL TO PUSH OF %s >>>', recordedPost._id);
                         }
@@ -387,7 +387,7 @@ function likeInfo(req, res, next){
             const pushData = {
                 pushType : 1,
                 postId : postId,
-                category : null,
+                category : 1, //좋아요
                 pusherId : updatedPost.userId,
                 pusherNickname : updatedPost.nickname,
                 img : updatedPost.profileThumbnail,
@@ -396,9 +396,9 @@ function likeInfo(req, res, next){
             if (!liked){
                 Notification.addPush(pushData, (err, token)=>{
                     if (err){
-                        console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
+                        return console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
                     }
-                    fcmPush([token], (err, response)=>{
+                    fcmPush([token], pushData, (err, response)=>{
                         if (err){
                             console.log('FAIL TO PUSH A POST OF %s >>>', postId);
                         }
