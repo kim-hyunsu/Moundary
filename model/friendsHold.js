@@ -14,10 +14,10 @@ class Holder{}
 // 친구 신청, [userId=>requestUser], [oppositeUserId=>responseUser]
 Holder.apply = function(userId, oppositeUserId, callback){
     log('5');
-    holder.create({ // todo-같은 요청이 두번 올 때 겹치는 문제 고려
+    holder.update({ // todo-같은 요청이 두번 올 때 겹치는 문제 고려
         requestUserId : userId, 
         responseUserId : oppositeUserId
-    }, (err, result)=>{
+    }, {upsert :true },(err, result)=>{
         if (err){
             return callback(err, null);
         }
