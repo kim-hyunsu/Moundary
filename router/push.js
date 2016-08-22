@@ -1,6 +1,6 @@
 const  FCM = require('fcm-push');
 
-const serverKey = 'Moundary_Server_Key';
+const serverKey = 'AIzaSyD4Wksjbo4pIIe3a06pLSwJrSGwATgjzXc';
 const fcm = new FCM(serverKey);
 
 var fcmPush = function(registration_ids, data, callback){
