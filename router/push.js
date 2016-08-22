@@ -10,6 +10,7 @@ var fcmPush = function(registration_ids, data, callback){
         collapse_key : (Math.random()*now).toString(),
         data : data
     };
+    console.log('READY TO PUSH A DATA >>>', msg);
     fcm.send(msg, callback);
 }
 
