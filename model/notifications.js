@@ -84,3 +84,5 @@ Notification.deleteOldNotifications = function(callback){
         }
     });
 }
+
+module.exports = Notification;
