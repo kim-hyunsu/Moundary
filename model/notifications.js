@@ -63,10 +63,24 @@ Notification.addPushs = function(pushData, postAddress, callback){
     });
 }
 
+Notification.getNotifications = function(userId, callback){
+    notification.find({pullerId : userId}, callback);
+}
+
 Notification.confirmAlteration = function(userId, postId, callback){
     notification.update({postId : postId, pullerId : userId}, {confirmed : true}, {multi : true}, (err, result)=>{
         if (err){
             callback(err);
+        }
+    });
+}
+
+Notification.deleteOldNotifications = function(callback){
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(now.getDate()-7);
+    notification.remove({pushDate: {$lt : oneWeekAgo}}, (err, result)=>{
+        if (err){
+            callback(err, null);
         }
     });
 }

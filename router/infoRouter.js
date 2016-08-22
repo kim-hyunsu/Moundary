@@ -162,8 +162,9 @@ function writeInfo(req, res, next){
 }
 
 function infoDetail(req, res, next){
+    const userId = req.query.userId;
     const postId = req.query.postId;
-    Post.getDetail(postId, (err, results)=>{
+    Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
             return next(err);
         }
@@ -172,6 +173,11 @@ function infoDetail(req, res, next){
             data : results
         }
         res.json(data);
+        Notification.confirmAlteration(userId, postId, (err)=>{
+            if (err){
+                console.log('FAIL TO CONFIRM A NOTIFICATION OF USERID >>>', userId);
+            }
+        });
     });
 
 }

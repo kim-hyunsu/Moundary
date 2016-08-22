@@ -6,6 +6,7 @@ const pathUtil = require('path');
 const User = require('../model/users.js');
 const Post = require('../model/posts.js');
 const Holder = require('../model/friendsHold.js');
+const Notificaiton = require('../model/notifications.js');
 const s3upload = require('./s3upload.js');
 const log = console.log;
 
@@ -37,7 +38,7 @@ router.put('/friend/:request', requestFriend);
 
 function notificationList(req, res, next){
     const userId = req.query.userId;
-    User.getNotifications(userId, (err, notifications)=>{
+    Notification.getNotifications(userId, (err, notifications)=>{
         if (err){
             return next(err);
         }
@@ -224,7 +225,7 @@ function modifyProfile(req, res, next){
                 if (err){
                     return cb(err);
                 }
-                if ( coverImg && coverImg.size > 0 ){ // new image, should be update coverImg of user
+                if ( coverImg.size > 0 ){ // new image, should be update coverImg of user
                     s3upload.original(coverImg.path, coverImg.type, 'coverImg', userId, (err, imageUrl)=>{ // should be delete a temporary file in the upload folder
                         if (err){
                             return cb(err, null);
@@ -292,7 +293,7 @@ function modifyProfile(req, res, next){
             // Post.updatePostUserInfo(userId, queryForPost, callback(err, results))
 
             User.getImageUrl('profileImg profileThumbnail', userId, (err, prevImageUrl)=>{
-                if (profileImg && profileImg.size > 0){ // new image
+                if (profileImg.size > 0){ // new image
                     async.parallel([
                         function(callback){
                             s3upload.original(profileImg.path, profileImg.type, 'profileImg', userId, callback);

@@ -253,8 +253,4 @@ User.getImageUrl = function(what, userId, callback){
     });
 }
 
-User.getNotifications = function(userId, callback){
-    notification.find({puller : userId}, callback);
-}
-
 module.exports = User;

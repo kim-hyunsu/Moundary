@@ -150,8 +150,9 @@ function writePost(req, res, next){
 
 function postDetail(req, res, next){
     console.log('get (get) request of /post/detail');
+    const userId = req.query.userId;
     const postId = req.query.postId;
-    Post.getPostDetail(postId, (err, results)=>{
+    Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
             return next(err);
         }
@@ -160,6 +161,11 @@ function postDetail(req, res, next){
             data : results
         }
         res.json(data);
+        Notification.confirmAlteration(userId, postId, (err)=>{
+            if (err){
+                console.log('FAIL TO CONFIRM A NOTIFICATION OF USERID >>>', userId);
+            }
+        });
     });
 }
 

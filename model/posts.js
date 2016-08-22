@@ -5,8 +5,10 @@ const async = require('async');
 var db = mongoose.connection;
 const postSchema = require('./Schema').post;
 const userSchema = require('./Schema').user;
+const notificationSchema = require('./Schema').notification;
 var post = mongoose.model('post', postSchema);
 var user = mongoose.model('user', userSchema);
+var notification = mongoose.model('notificaiton', notificationSchema);
 class Post{}
 
 // 친구소식
@@ -350,13 +352,35 @@ Post.recordPost = function(APost, callback){
 // }
 
 // 게시물 상세 정보 가져오기
-Post.getPostDetail = function(postId, callback){
-    post.findOne({_id : postId}, '-reply', (err, results)=>{
-        if (err){
-            return callback(err, null);
+Post.getPostDetail = function(userId, postId, callback){
+    const projection = {
+        category: 1,
+        postAddress : 1,
+        due : 1,
+        userId : 1,
+        nickname : 1,
+        profileThumbnail :1,
+        postImg : 1,
+        postThumbnail :1,
+        postContent : 1,
+        postDate :1,
+        postLikeCount : 1,
+        replyCount : 1,
+        reply :1,
+        myLike : {
+            $cond : [
+                {$setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers']}, true, false
+            ]
         }
-        callback(null, results);
-    });
+    };
+    post.aggregate()
+        .match({_id : postId})
+        .project(projection)
+        .then((doc)=>{
+            callback(null, doc[0]);
+        }, (err)=>{
+            callback(err, null);
+        });
 }
 
 // 댓글 가져오기
@@ -494,6 +518,20 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
                 callback(null);
             });
         });
+        if (userInfo.nickname){
+            notification.update({pusherId : userId}, {pusherNickname : userInfo.nickname}, (err, result)=>{
+                if (err){
+                    return callback(err);
+                }
+            });
+        }
+        if (userInfo.profileThumbnail){
+            notification.update({pushType : 0, pusherId : userId}, {img : userInfo.profileThumbnail}, (err, result)=>{
+                if (err){
+                    return callback(err);
+                }
+            });
+        }
     });
 }
 
@@ -512,6 +550,13 @@ Post.updatePost = function(userId, postId, query, callback){
     post.findOneAndUpdate({_id : postId, userId : userId}, query, {new : true, fields : '-reply'})
         .then((doc)=>{
             callback(null, doc);
+            if (query.postThumbnail){
+                notification.update({pushType : 1, postId : postId}, {img : query.postThumbnail}, (err, result)=>{
+                    if (err){
+                        console.log('FAIL TO UPDATE THR POSTTHUMBNAIL OF %s IN NOTIFICATION COLLECTION', postId);
+                    }
+                });
+            }
         }, (err)=>{
             callback(err, null);
         });

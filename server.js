@@ -23,6 +23,8 @@ const searchRouter = require('./router/searchRouter');
 // delete expired information posts every hours
 var mongoConnectionString = "mongodb://52.78.98.25:27017/moundary";
 var agenda = new Agenda({db: {address: mongoConnectionString}});
+const Post = require('./model/posts.js');
+const Notification = require('./model/notifications.js');
 agenda.define('deleteExpiredPosts', (job, done)=>{
     Post.deleteExpiredPosts( (err, result)=>{
         if (err){
@@ -33,8 +35,19 @@ agenda.define('deleteExpiredPosts', (job, done)=>{
         done(null);
     });
 });
+agenda.define('deleteOldNotifications', (job, done)=>{
+    Notification.deleteOldNotifications( (err, result)=>{
+        if (err){
+            console.log('FAIL TO DELETE Old Notifications >>>', err.message);
+            return done(err);
+        }
+        console.log('DELETED Old Notifications >>>', result);
+        done(null);
+    });
+});
 agenda.on('ready', ()=>{
     agenda.every('1 hours', 'deleteExpiredPosts');
+    agenda.every('1 hours', 'deleteOldNotifications');
     agenda.start();
 });
 

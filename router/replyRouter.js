@@ -34,11 +34,11 @@ function replyList(req, res, next){
             data : results
         }
         res.json(data);
-        Notification.confirmAlteration(userId, postId, (err)=>{
-            if (err){
-                console.log('FAIL TO CONFIRM A NOTIFICATION OF USERID >>>', userId);
-            }
-        })
+        // Notification.confirmAlteration(userId, postId, (err)=>{
+        //     if (err){
+        //         console.log('FAIL TO CONFIRM A NOTIFICATION OF USERID >>>', userId);
+        //     }
+        // });
     });
 }
 
