@@ -74,5 +74,8 @@ function errorCtrl(err, req, res, next){
     console.log('==ERROR MESSAGE========================================');
     console.log(err);
     console.log('==ERROR MESSAGE========================================');
-    res.sendStatus(err.code);
+    const data = {
+        msg : 'failure'
+    }
+    res.json(data);
 }

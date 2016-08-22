@@ -434,8 +434,12 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
         .then((results)=>{
             console.log('REPLY FOUND >>>', results);
             // endReply = results[0].reply[0]._id; =>> todo
-            endReply = endReply+results[0].reply.length
-            callback(null, results[0].reply, endReply);
+            if (results[0]){
+                endReply = endReply+results[0].reply.length;
+                callback(null, results[0].reply, endReply);
+            } else {
+                callback(null, [], endReply);
+            }
         }, (err)=>{
             console.log('REPLY NOT FOUND');
             callback(err, null, null);
