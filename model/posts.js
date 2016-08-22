@@ -97,9 +97,6 @@ Post.getPosts = function(endPost, userId, count, callback){
                 }
             }
             promise.project(projectionWithMyLike).limit(count).sort({_id:-1}).then((results)=>{
-                console.log('=============RESULTS==============');
-                console.log(results);
-                console.log('==================================');
                 results.hasFriend = hasFriend;
                 callback(null, results);
             }, (err)=>{

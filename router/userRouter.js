@@ -6,7 +6,7 @@ const pathUtil = require('path');
 const User = require('../model/users.js');
 const Post = require('../model/posts.js');
 const Holder = require('../model/friendsHold.js');
-const Notificaiton = require('../model/notifications.js');
+const Notification = require('../model/notifications.js');
 const s3upload = require('./s3upload.js');
 const log = console.log;
 
