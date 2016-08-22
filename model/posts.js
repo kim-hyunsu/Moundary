@@ -366,11 +366,20 @@ Post.getPostDetail = function(userId, postId, callback){
         postDate :1,
         postLikeCount : 1,
         replyCount : 1,
-        reply :1,
         myLike : {
             $cond : [
                 {$setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers']}, true, false
             ]
+        },
+        'reply._id' : 1,
+        'reply.userId' : 1,
+        'reply.profileThumbnail' : 1,
+        'reply.replyContent' : 1,
+        'reply.nickname' : 1,
+        'reply.replyDate' : 1,
+        'reply.replyLikeCount' : 1,
+        'reply.myLike' : {
+            $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
         }
     };
     post.aggregate()
@@ -403,7 +412,7 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
     //         callback(err, null, null);
     //     });
     console.log('USERID>>>', userId);
-    var projectionWithIsLike = {
+    var projection = {
         'reply._id' : 1,
         'reply.userId' : 1,
         'reply.profileThumbnail' : 1,
@@ -411,24 +420,6 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
         'reply.nickname' : 1,
         'reply.replyDate' : 1,
         'reply.replyLikeCount' : 1,
-        'reply.replyLikeUsers' : 1,
-        // 'reply.isLiked' : {
-        //     $setIntersection : ['$reply.replyLikeUsers', [mongoose.Types.ObjectId]]
-        // }
-    }
-    var projectionWithMyLike = {
-        'reply._id' : 1,
-        'reply.userId' : 1,
-        'reply.profileThumbnail' : 1,
-        'reply.replyContent' : 1,
-        'reply.nickname' : 1,
-        'reply.replyDate' : 1,
-        'reply.replyLikeCount' : 1,
-        // 'reply.myLike' : {
-        //     $cond : {
-        //         if : {$ne : ['$reply.isLiked', [] ]}, then : true, else : false
-        //     }
-        // }
         'reply.myLike' : {
             $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
         }
@@ -440,7 +431,7 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
         // .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
         // .project({'reply.$' : 1})
         // .unwind('reply')
-        .project(projectionWithIsLike).project(projectionWithMyLike)
+        .project(projection)
         .limit(count)
         .sort({'reply._id' : -1})
         .then((results)=>{
@@ -519,14 +510,14 @@ Post.updatePostUserInfo = function(userId, userInfo, callback){
             });
         });
         if (userInfo.nickname){
-            notification.update({pusherId : userId}, {pusherNickname : userInfo.nickname}, (err, result)=>{
+            notification.update({pusherId : userId}, {pusherNickname : userInfo.nickname}, {multi : true}, (err, result)=>{
                 if (err){
                     return callback(err);
                 }
             });
         }
         if (userInfo.profileThumbnail){
-            notification.update({pushType : 0, pusherId : userId}, {img : userInfo.profileThumbnail}, (err, result)=>{
+            notification.update({pushType : 0, pusherId : userId}, {img : userInfo.profileThumbnail}, {multi : true}, (err, result)=>{
                 if (err){
                     return callback(err);
                 }
@@ -551,7 +542,7 @@ Post.updatePost = function(userId, postId, query, callback){
         .then((doc)=>{
             callback(null, doc);
             if (query.postThumbnail){
-                notification.update({pushType : 1, postId : postId}, {img : query.postThumbnail}, (err, result)=>{
+                notification.update({pushType : 1, postId : postId}, {img : query.postThumbnail}, {multi: true}, (err, result)=>{
                     if (err){
                         console.log('FAIL TO UPDATE THR POSTTHUMBNAIL OF %s IN NOTIFICATION COLLECTION', postId);
                     }
