@@ -268,13 +268,13 @@ function modifyInfo(req, res, next){
                     function(cb){
                         s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', userId, cb);
                     }
-                ], (err, imageUrls)=>{
+                ], (err, urls)=>{
                     if (err){
                         //s3삭제
                         return callback(err);
                     }
-                    query.postImg = imageUrls[0];
-                    query.postThumbnail = imageUrls[1];
+                    query.postImg = urls[0];
+                    query.postThumbnail = urls[1];
                     callback();
                     fs.stat(postImg.path, (err, stats)=>{
                         if (err){

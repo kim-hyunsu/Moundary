@@ -1,5 +1,6 @@
 var AWS = require('aws-sdk');
 const fs = require('fs');
+const async = require('async');
 const config = require('./s3config.js');
 AWS.config.region = 'ap-northeast-2';
 AWS.config.accessKeyId = config.accessKeyId;
@@ -109,6 +110,72 @@ s3upload.delete = function(url, callback){
 }
 
 // upload original image to s3 and then upload thumbanailed image to s3.
+s3upload.originalAndThumbnail = function(imagePath, imageType, folder, userId, callback){
+    const date = new Date();
+    const extname = pathUtil.extname(imagePath);
+    if (extname.length == 0){
+        return callback(null, null, null);
+    }
+    async.parallel([
+        function(cb){
+            var readStream = fs.createReadStream(imagePath);
+            const itemKey = folder+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
+                            +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
+            const params = {
+                Bucket : bucketName,
+                Key : itemKey,
+                ACL : 'public-read',
+                Body : readStream,
+                ContentType : imageType
+            }
+            s3.putObject(params, (err, data)=>{
+                if (err){
+                    return cb(err, null);
+                }
+                const path = 'http://' + s3.endpoint.host + '/' + bucketName + '/'+ itemKey;
+                console.log('Upload Complete >>>', path);
+                cb(null, path);   
+            });
+        },
+        function(cb){
+            const thumbnail = __dirname+"/../upload/thumb_" +pathUtil.basename(imagePath);
+            console.log('Check Thumbnail Path >>>', thumbnail);
+            im.resize({
+                srcPath : imagePath,
+                dstPath : thumbnail,
+                width : 339
+            },(err, stdout, stderr)=>{
+                    if (err){
+                        cb(err, null);
+                    }
+                    console.log('The image resized');
+                    var readStream = fs.createReadStream(thumbnail);
+                    const itemKey = folder.replace('Img', 'Thumbnail')+'/'+date.getFullYear()+(date.getMonth()+1)+date.getDate()+date.getHours()
+                                +date.getMinutes()+date.getSeconds()+'_'+userId+extname;
+                    const params = {
+                        Bucket : bucketName,
+                        Key : itemKey,
+                        ACL : 'public-read',
+                        Body : readStream,
+                        ContentType : imageType
+                    }
+                    s3.putObject(params, (err, data)=>{
+                        if (err){
+                            return cb(err, null);
+                        }
+                        const path = 'http://' + s3.endpoint.host + '/' + bucketName + '/'+ itemKey;
+                        console.log('The thumbnail uploading complete >>>', path);
+                        cb(null, path);
+                    });
+                });
+        }
+    ], (err, paths)=>{
+        if (err){
+            return callback(err, null, null);
+        }
+        callback(null, paths[0], paths[1]);
+    });
+}
 
 
 

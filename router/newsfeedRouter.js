@@ -209,11 +209,11 @@ function modifyPost(req, res, next){
         },
         function(cb){
             if (postImg || postImg.size > 0){
-                s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, imageUrl)=>{
+                s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, url)=>{
                     if (err){
                         return cb(err);
                     }
-                    query.postImg = imageUrl;
+                    query.postImg = url;
                     cb();
                     fs.stat(postImg.path, (err, stats)=>{
                         if (err){

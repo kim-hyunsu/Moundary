@@ -13,9 +13,9 @@ class Notification{};
 
 Notification.addPush = function(pushData, callback){
     post.aggregate()
-        .match({_id : pushData.postId})
+        .match({_id : mongoose.Types.ObjectId(pushData.postId)})
         .lookup({from : 'users', localField : 'userId', foreignField : '_id', as : 'puller'})
-        .match({'puller._id' : {$ne : pushData.pusherId}})
+        .match({'puller._id' : {$ne : mongoose.Types.ObjectId(pushData.pusherId)}})
         .project({puller: 1, _id:0})
         .then((docs)=>{
             if (docs.length == 0){
