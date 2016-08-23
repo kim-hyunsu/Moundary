@@ -53,9 +53,7 @@ const userSchema = Schema({
     },
     joinPath : Number,
     friendList : [Schema.Types.ObjectId],
-    baby : [{
-        babyAge: Date
-    }],
+    babyAge : Date
     // alram : {
     //     alram : {type : Boolean, default : true},
     //     sale : { type : Boolean, default : false},

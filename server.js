@@ -77,5 +77,5 @@ function errorCtrl(err, req, res, next){
     const data = {
         msg : 'failure'
     }
-    res.json(data);
+    res.sendStatus(err.code).json(data);
 }

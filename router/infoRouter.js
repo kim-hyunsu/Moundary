@@ -7,6 +7,7 @@ const Post = require('../model/posts.js');
 const Notification = require('../model/notifications.js');
 const s3upload = require('./s3upload.js');
 const fcmPush = require('./push.js');
+var err = new Error();
 // 동네소식 목록, 정보글 쓰기, 수정, 삭제
 router.route('/info')
     .get(infoList)
@@ -28,6 +29,10 @@ function infoList(req, res, next){
     const endPost = postAddress.endPost;
     const postCount = parseInt(postAddress.postCount);
     const userId = req.query.userId;
+    if (!userId){
+        err.code = 400;
+        return next(err);
+    }
     delete postAddress.category;
     delete postAddress.endPost;
     delete postAddress.userId;
@@ -35,6 +40,7 @@ function infoList(req, res, next){
 
     const callback = function(err, results){
         if (err){
+            err.code = 500;
             return next(err);
         }
         console.log('Got information of near by posts')
@@ -67,25 +73,46 @@ function infoList(req, res, next){
 
 function writeInfo(req, res, next){
     console.log('get (post) request of /info');
-    var dueDate = new Date();
-    dueDate.setDate(dueDate.getDate()+parseInt(req.body.due));
     const userId = req.query.userId;
-    const body = req.body;
+    const due = req.body.due;
+    const category = parseInt(req.body.category);
+    const postContent = req.body.postContent;
     const postAddress = {
-        area1 : body.area1,
-        area2 : body.area2,
-        area3 : body.area3,
-        area4 : body.area4,
-        area5 : body.area5
+        area1 : req.body.area1,
+        area2 : req.body.area2,
+        area3 : req.body.area3,
+        area4 : req.body.area4,
+        area5 : req.body.area5
     };
+    const postImg = req.body.postImg;
+    if (due){
+        var dueDate = new Date();
+        dueDate.setDate(dueDate.getDate()+parseInt(req.body.due));
+    } else {
+        dueDate.setDate(dueDate.getDate()+7);
+    }
+    if (!userId || !category || !postAddress.area1 || !postAddress.area2 || !postAddress.area4 || !postAddress.area5 || !postImg){
+        if (postImg){
+            fs.stat(postImg.path, (err, stats)=>{
+                if (!err){
+                    fs.unlink(postImg.path, (err)=>{
+                        if (err){
+                            console.log('FAIL TO DELETE THE IMAGE IN UPLOAD FILE >>>', postImg.path);
+                        }
+                    })
+                }
+            });
+        }
+        err.code = 400;
+        return next(err);
+    }
     var post = {
         userId : userId,
-        category : parseInt(body.category),
+        category : category,
         due : dueDate,
-        postContent : body.postContent,
+        postContent : postContent,
         postAddress : postAddress
     };
-    const postImg = body.postImg;
     s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, imageUrl)=>{
         if(err){
             fs.unlink(postImg.path, (err)=>{
@@ -95,6 +122,7 @@ function writeInfo(req, res, next){
                 else{
                     console.log('Deleted a empty image');
                 }
+                err.code = 500;
                 return next(err);
             });
         }
@@ -103,6 +131,7 @@ function writeInfo(req, res, next){
         s3upload.thumbnail(postImg.path, postImg.type, 'postThumbnail', userId, (err, imageUrl)=>{
             const thumbnailPath = __dirname+'/../upload/thumb_'+pathUtil.basename(postImg.path);
             if(err){
+                err.code = 500;
                 return next(err);
             }
             console.log('s3 uploaded the thumbnail image');
@@ -111,6 +140,7 @@ function writeInfo(req, res, next){
             post.reply =[];
             Post.recordPost(post, (err, recordedPost)=>{
                 if (err){
+                    err.code = 500;
                     return next(err);
                 }
                 console.log('The info post recorded in the db');
@@ -164,8 +194,13 @@ function writeInfo(req, res, next){
 function infoDetail(req, res, next){
     const userId = req.query.userId;
     const postId = req.query.postId;
+    if (!userId || !postId){
+        err.code = 400;
+        return next(err);
+    }
     Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         const data = {
@@ -186,6 +221,10 @@ function modifyInfo(req, res, next){
     var dueDate = new Date();
     const userId = req.query.userId;
     const postId = req.body.postId;
+    if (!userId || !postId){
+        err.code = 400;
+        return next(err);
+    }
     const category = parseInt(req.body.category);
     const address = {
         area1 : req.body.area1,
@@ -200,6 +239,7 @@ function modifyInfo(req, res, next){
     if (!category && !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 && !due && !postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
+                err.code = 500;
                 return next(err);
             }
             const data = {
@@ -306,12 +346,14 @@ function modifyInfo(req, res, next){
         }
     ], (err)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         Post.updatePost(userId, postId, query, (err, updatedPost)=>{
             if (err){
+                err.code = 500;
                 next(err);
-                s3upload.delete(query.postImg, (err,result)=>{
+                s3upload.delete(query.postImg, (err, result)=>{
                     if (err){
                         console.log('FAIL TO DELETE THE IMAGE IN S3 >>>', query.postImg);
                     }
@@ -344,8 +386,13 @@ function modifyInfo(req, res, next){
 function deleteInfo(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
+    if (!userId || postId){
+        err.code = 400;
+        return next(err);
+    }
     Post.removePost(userId, postId, (err, removedPost)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         const data = {
@@ -369,9 +416,14 @@ function deleteInfo(req, res, next){
 function likeInfo(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
+    if (!userId || !postId){
+        err.code = 400;
+        return next(err);
+    }
     var query;
     Post.checkPostLiked(userId, postId, (err, liked)=>{
-        if ( err ){
+        if (err){
+            err.code = 500;
             return next(err);
         }
         if (!liked){
@@ -383,6 +435,7 @@ function likeInfo(req, res, next){
         }
         Post.likePost(postId, query, (err, updatedPost)=>{
             if (err){
+                err.code = 500;
                 return next(err);
             }
             const data = {

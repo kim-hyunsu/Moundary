@@ -6,6 +6,7 @@ const Post = require('../model/posts.js');
 const s3upload = require('./s3upload.js');
 const Notification  = require('../model/notifications.js');
 const fcmPush = require('./push.js');
+var err = new Error();
 
 // 친구소식 목록, 글 쓰기, 수정, 삭제
 router.route('/post')
@@ -30,9 +31,13 @@ function newsList(req, res, next){
     const endPost = req.query.endPost;
     const userId = req.query.userId;
     const postCount = parseInt(req.query.postCount);
-
+    if (!userId){
+        err.code = 400;
+        return next(err);
+    }
     Post.getPosts(endPost, userId, postCount, (err, results)=>{
         if(err){
+            err.code = 500;
             return next(err);
         }
         const hasFriend = results.hasFriend;
@@ -61,7 +66,10 @@ function myPostList(req, res, next){
     const endPost = req.query.endPost;
     const userId = req.query.userId;
     const postCount = parseInt(req.query.postCount);
-
+    if(!userId){
+        err.code = 400;
+        return next(err);
+    }
     Post.getMyPosts(endPost, userId, postCount, (err, results)=>{
         if (err){
             return next(err);
@@ -92,6 +100,21 @@ function writePost(req, res, next){
     var postImg = req.body.postImg;
     // upload the original image to s3
     console.log('POSTiMG',postImg);
+    if(!userId || !postImg){
+        if (postImg){
+            fs.stat(postImg.path, (err, stats)=>{
+                if (!err){
+                    fs.unlink(postImg.path, (err)=>{
+                        if (err){
+                            console.log('FAIL TO DELETE THE IMAGE IN UPLOAD FILE >>>', postImg.path);
+                        }
+                    });
+                }
+            });
+        }
+        err.code = 400;
+        return next(err);
+    }
     s3upload.original(postImg.path, postImg.type, 'postImg', userId, (err, imageUrl)=>{
         if (err){
             fs.unlink(postImg.path, (err)=>{
@@ -101,6 +124,7 @@ function writePost(req, res, next){
                 else{
                     console.log('Deleted a empty image');
                 }
+                err.code = 500;
                 return next(err);   
             });
         }
@@ -124,6 +148,7 @@ function writePost(req, res, next){
                     else{
                         console.log('Deleted a empty image');
                     }
+                    err.code = 500;
                     return next(err);   
                 });
             }

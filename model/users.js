@@ -20,7 +20,7 @@ User.getFriends = function(endUser, userId, count, callback){
             return callback(err, null);
         }
         const friendList = result.friendList;
-        user.find({_id:{$in:friendList}}, 'nickname profileThumbnail userAddress baby')
+        user.find({_id:{$in:friendList}}, 'nickname profileThumbnail userAddress babyAge')
             .where('_id').lt(endUser).limit(count).sort({_id:-1})
             .then((results)=>{
                 callback(null, results);
@@ -70,7 +70,7 @@ User.getProfile = function(profileUserId, userId, callback){
 
 // 나의 프로필 페이지
 User.getMyProfile = function(userId, callback){
-    user.findOne({_id: userId}, 'profileImg coverImg nickname userAddress friendList baby', (err, result)=>{
+    user.findOne({_id: userId}, 'profileImg coverImg nickname userAddress friendList babyAge', (err, result)=>{
         if (err){
             return callback(err, null);
         }
@@ -90,7 +90,7 @@ User.createUser = function(userInfo, callback){
 
 // userInfo에 객체로 유저 정보를 입력하면 해당 정보 저장
 User.updateUser = function(userId, userInfo, callback){
-    user.findOneAndUpdate({_id : userId}, userInfo, {new : true, upsert : true, fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
+    user.findOneAndUpdate({_id : userId}, userInfo, {new : true, upsert : true, fields : 'profileImg coverImg nickname userAddress friendList babyAge'},(err, result)=>{
         if (err){
             return callback(err, null);
         }
@@ -102,14 +102,14 @@ User.updateUser = function(userId, userInfo, callback){
 }
 
 // 아이 나이 수정
-User.updateBabyAge = function(userId, babyId, babyAge, callback){
-    user.findOneAndUpdate({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, {new : true, fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
-        if (err){
-            return callback(err, null);
-        }
-        callback(null, result);
-    });
-}
+// User.updateBabyAge = function(userId, babyId, babyAge, callback){
+//     user.findOneAndUpdate({_id : userId, 'baby._id' : babyId}, {$set : {'baby.$.babyAge' : babyAge}}, {new : true, fields : 'profileImg coverImg nickname userAddress friendList baby'},(err, result)=>{
+//         if (err){
+//             return callback(err, null);
+//         }
+//         callback(null, result);
+//     });
+// }
 
 // ageRange 코드 값에 따라 알맞은 생년월일 범위 반환
 function ageRangeSwitch(ageRange){
@@ -158,8 +158,8 @@ User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count,
         for(var key in userAddress){
             query['userAddress.'+key] = userAddress[key];
         }
-        user.find(query, 'profileThumbnail nickname userAddress baby')
-            .where('baby.$.babyAge').gte(min).lte(max)
+        user.find(query, 'profileThumbnail nickname userAddress babyAge')
+            .where('babyAge').gte(min).lte(max)
             .where('_id').nin(result.friendList)
             .limit(count).sort({_id:-1}).lean()
             .then( (results)=>{
@@ -205,8 +205,8 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
             query['userAddress.'+key] = userAddress[key];
         }
         log('query >>>', query);
-        user.find(query, 'profileThumbnail nickname userAddress baby')
-            .where('baby.babyAge').gte(min).lte(max)
+        user.find(query, 'profileThumbnail nickname userAddress babyAge')
+            .where('babyAge').gte(min).lte(max)
             .where('_id').nin(result.friendList)
             .limit(count).sort({_id:-1}).lean()
             .then( (results)=>{
@@ -234,7 +234,7 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
 
 // 입력된 닉네임과 유사한 닉네임의 유저들 검색
 User.getUsersByNick = function(userId, nickname, callback){
-    user.find({nickname : new RegExp('^'+nickname)}, 'nickname profileThumbnail userAddress baby')
+    user.find({nickname : new RegExp('^'+nickname)}, 'nickname profileThumbnail userAddress babyAge')
         .where('_id').ne(userId)
         .then((docs)=>{
             callback(null, docs);

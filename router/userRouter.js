@@ -100,6 +100,10 @@ function profile(req, res, next){
     console.log('get (get) request of /user');
     const profileUserId = req.query.profileUserId;  //session에서 긁지 않고 요청으로 받는다.
     const userId = req.query.userId;
+    if (!userId || !profileUserId){
+        err.code = 400;
+        return next(err);
+    }
     User.getProfile(profileUserId, userId, (err, result)=>{
         if (err){
             return next(err);
@@ -115,6 +119,9 @@ function profile(req, res, next){
 
 function myProfile(req, res, next){
     const userId = req.query.userId;
+    if (!userId){
+        return next(err);
+    }
     User.getMyProfile(userId, (err,result)=>{
         if (err){
             return next(err);
@@ -129,6 +136,9 @@ function myProfile(req, res, next){
 
 function modifyProfile(req, res, next){
     const userId = req.query.userId;
+    if (!userId){
+        return next(err);
+    }
     const nickname = req.body.nickname;
     const userAddress = {
         area1 : req.body.area1,
@@ -137,12 +147,9 @@ function modifyProfile(req, res, next){
         area4 : req.body.area4,
         area5 : req.body.area5
     };
-    const babyId = req.body.babyId;
     const age = req.body.babyAge;
-    const addBaby = req.body.addBaby;
     const coverImg = req.body.coverImg;
     const profileImg = req.body.profileImg;
-    var babyAge = new Date();
     var query = {};
     var prevImageUrl = {};
     var queryForPost = {};
@@ -221,21 +228,6 @@ function modifyProfile(req, res, next){
                 queryForPost.profileThumbnail = "http://s3.ap-northeast-2.amazonaws.com/moundary/profileThumbnail/emptyProfileImage.jpg";
                 cb();
             }
-        },
-        function(cb){
-            if (babyId && age){
-                babyAge.setFullYear(parseInt(age.substring(0,4)));
-                babyAge.setMonth(parseInt(age.substring(4,6))-1);
-                babyAge.setDate(parseInt(age.substring(6,8)));
-                User.updateBabyAge(userId, babyId, babyAge, (err, result)=>{
-                    if (err){
-                        return cb(err);
-                    }
-                    cb();
-                });
-            } else {
-                cb();
-            }
         }
     ], (err)=>{
         if (err){
@@ -266,11 +258,12 @@ function modifyProfile(req, res, next){
                     query['userAddress.'+key] = userAddress[key];
                 }
             }
-            if (addBaby){
-                babyAge.setFullYear(parseInt(addBaby.substring(0,4)));
-                babyAge.setMonth(parseInt(addBaby.substring(4,6))-1);
-                babyAge.setDate(parseInt(addBaby.substring(6,8)));
-                query['$push'] = { baby : { babyAge : babyAge } };
+            if (age){
+                var babyAge = new Date();
+                babyAge.setFullYear(parseInt(age.substring(0,4)));
+                babyAge.setMonth(parseInt(age.substring(4,6))-1);
+                babyAge.setDate(parseInt(age.substring(6,8)));
+                query.babyAge = babyAge;
             }
             User.updateUser(userId, query, (err, updatedUser)=>{
                 if (err){

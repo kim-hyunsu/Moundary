@@ -3,9 +3,9 @@ const router = express.Router();
 const fs = require('fs');
 const async = require('async');
 const pathUtil = require('path');
-
 const User = require('../model/users.js');
 const s3upload = require('./s3upload.js');
+var err = new Error();
 
 router.post('/auth/signup', signup);
 
@@ -27,7 +27,7 @@ function signup(req, res, next){
     }
     const coverImg = req.body.coverImg;
     const profileImg = req.body.profileImg;
-    if (!uuid || !fcmToken || !age || age.length>8 || age.length==0 || !userAddress.area1 || !userAddress.area1 || !userAddress.area2 || !userAddress.area4 || !userAddress.area5){
+    if (!uuid || !fcmToken || !age || !nickname || age.length>8 || age.length==0 || !userAddress.area1 || !userAddress.area2 || !userAddress.area4 || !userAddress.area5){
         if (coverImg){
             fs.stat(coverImg.path, (err, stats)=>{
                 if (!err){
@@ -38,7 +38,6 @@ function signup(req, res, next){
             });
         }
         if (profileImg){
-            const thumbnailPath = __dirname+'/../upload/thumb_'+pathUtil.basename(profileImg.path);
             fs.stat(profileImg.path, (err, stats)=>{
                 if (!err){
                     fs.unlink(profileImg.path, (err)=>{
@@ -47,6 +46,7 @@ function signup(req, res, next){
                 }
             });
         }
+        err.code = 400;
         return next(err);
     }
     var query = {};
@@ -108,6 +108,7 @@ function signup(req, res, next){
         }
     ], (err)=>{
         if (err){
+            err.code = 500;
             next(err);
             s3upload.delete(query.coverImg, (err, result)=>{
                 if (err){
@@ -133,9 +134,10 @@ function signup(req, res, next){
             babyAge.setFullYear(parseInt(age.substring(0,4)));
             babyAge.setMonth(parseInt(age.substring(4,6))-1);
             babyAge.setDate(parseInt(age.substring(6,8)));
-            query.baby = [{babyAge : babyAge}];
+            query.babyAge = babyAge;
             User.createUser(query, (err, result)=>{
                 if (err){
+                    err.code = 500;
                     next(err);
                 } else {
                     const data = {
