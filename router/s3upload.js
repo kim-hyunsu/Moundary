@@ -105,7 +105,11 @@ s3upload.delete = function(url, callback){
             return callback(err, null);
         }
         callback(null,null);
-    })
+    });
 }
+
+// upload original image to s3 and then upload thumbanailed image to s3.
+
+
 
 module.exports = s3upload;

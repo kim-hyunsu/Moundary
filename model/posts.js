@@ -380,9 +380,10 @@ Post.getPostDetail = function(userId, postId, callback){
         }
     };
     post.aggregate()
-        .match({_id : postId})
+        .match({_id : mongoose.Types.ObjectId(postId)})
         .project(projection)
         .then((doc)=>{
+            console.log(doc);
             callback(null, doc[0]);
         }, (err)=>{
             callback(err, null);
