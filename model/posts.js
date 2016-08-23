@@ -17,7 +17,7 @@ Post.getPosts = function(endPost, userId, count, callback){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }
     if (!count){
-        count = 60;
+        count = 10;
     }
     user.findOne({_id : userId}, 'friendList -_id')
         .then((results)=>{
@@ -113,7 +113,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }   
     if(!count){
-        count = 60;
+        count = 10;
     }
     user.findOne({_id : userId}, 'userAddress -_id', (err, results)=>{
         if (err){
@@ -171,7 +171,7 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     }
     if (!count){
-        count = 60;
+        count = 10;
     }
     var query = {};
     var projection = {
@@ -213,7 +213,7 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
 Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
     console.log('searching posts....');
     endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-    count = count || 60; 
+    count = count || 10; 
     word = word || '';
     var projection = {
         category : 1, 
@@ -396,7 +396,7 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
 
     // endReply = endReply || "000000000000000000000000"; //object id of 1970.01.01 09:00:00
     endReply = endReply || 0;    
-    count = count || 20;
+    count = count || 10;
 
     // post.findOne({ _id : postId}, 'reply -_id')
     //     .slice('reply', [endReply, count])

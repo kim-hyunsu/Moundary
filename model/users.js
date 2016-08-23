@@ -14,7 +14,7 @@ const log = console.log;
 // 친구 목록 얻기
 User.getFriends = function(endUser, userId, count, callback){
     endUser = endUser || "ffce5eef0000000000000000";
-    count = count || 60;
+    count = count || 10;
     user.findOne({_id : userId}, 'friendList -_id', (err, result)=>{
         if (err){
             return callback(err, null);
@@ -148,7 +148,7 @@ function ageRangeSwitch(ageRange){
 User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count, callback){
     //default values
     endUser = endUser || "ffce5eef0000000000000000";
-    count = count || 60;
+    count = count || 10;
     user.findOne({_id:userId}, 'friendList -_id', (err, result)=>{
         if (err){
             return callback(err, null);
@@ -190,7 +190,7 @@ User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count,
 User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
     //default values
     endUser = endUser || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59   
-    count = count || 60;
+    count = count || 10;
     user.findOne({_id : userId}, 'userAddress babyAge friendList -_id', (err, result)=>{
         if (err){
             return callback(err, null);

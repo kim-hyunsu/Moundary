@@ -18,11 +18,12 @@ Notification.addPush = function(pushData, callback){
         .match({'puller._id' : {$ne : mongoose.Types.ObjectId(pushData.pusherId)}})
         .project({puller: 1, _id:0})
         .then((docs)=>{
+            console.log('docs>>>', docs[0].puller[0]);
             if (docs.length == 0){
                 return callback(err, null);
             }
-            callback(null, docs[0].puller.fcmToken);
-            pushData.pullerId = docs[0].puller._id;
+            callback(null, docs[0].puller[0].fcmToken);
+            pushData.pullerId = docs[0].puller[0]._id;
             notification.create(pushData, (err, result)=>{
                 if (err){
                     console.log('FAIL TO SAVE A PUSH >>>', pushData);
