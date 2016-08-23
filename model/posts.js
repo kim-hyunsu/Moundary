@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const async = require('async');
+const calculTime = require('./calculTime.js');
 // const url = 'mongodb://52.78.98.25:27017/moundary';
 // mongoose.connect(url);
 var db = mongoose.connection;
@@ -39,6 +40,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postImg : 1, 
                     postThumbnail : 1,
                     postContent : 1,  
+                    postDate : 1,
                     userId: 1, 
                     postLikeUsers: 1,
                     replyCount : 1,
@@ -63,6 +65,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postImg : 1, 
                     postThumbnail : 1,
                     postContent : 1,  
+                    postDate : 1,
                     userId: 1, 
                     postLikeUsers: 1,
                     replyCount : 1,
@@ -89,6 +92,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                 postImg : 1, 
                 postThumbnail : 1,
                 postContent : 1,  
+                // postDate : calculTime('$postDate', null),
                 userId: 1, 
                 postLikeCount : 1,
                 replyCount : 1,
@@ -131,7 +135,8 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
             profileThumbnail : 1, 
             postImg : 1, 
             postThumbnail : 1,
-            postContent : 1,  
+            postContent : 1, 
+            postDate : 1, 
             userId: 1, 
             postLikeCount : 1,
             replyCount : 1,
@@ -182,7 +187,8 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         profileThumbnail : 1, 
         postImg : 1, 
         postThumbnail : 1,
-        postContent : 1,  
+        postContent : 1, 
+        postDate : 1, 
         userId: 1, 
         postLikeCount : 1,
         replyCount : 1,
@@ -223,7 +229,8 @@ Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
         profileThumbnail : 1, 
         postImg : 1,
         postThumbnail : 1,
-        postContent : 1,  
+        postContent : 1, 
+        postDate :1, 
         userId: 1,
         replyCount : 1,
         postLikeCount : 1,
@@ -260,7 +267,8 @@ Post.getMyPosts = function(endPost, userId, count, callback){
         profileThumbnail : 1, 
         postImg : 1, 
         postThumbnail : 1,
-        postContent : 1,  
+        postContent : 1, 
+        postDate : 1, 
         userId: 1,
         postLikeCount : 1,
         replyCount : 1,
