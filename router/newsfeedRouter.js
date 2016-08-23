@@ -32,12 +32,12 @@ function newsList(req, res, next){
     const userId = req.query.userId;
     const postCount = parseInt(req.query.postCount);
     if (!userId){
-        err.code = 400;
+        err.code = 401;
         return next(err);
     }
     Post.getPosts(endPost, userId, postCount, (err, results)=>{
         if(err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const hasFriend = results.hasFriend;
@@ -67,11 +67,12 @@ function myPostList(req, res, next){
     const userId = req.query.userId;
     const postCount = parseInt(req.query.postCount);
     if(!userId){
-        err.code = 400;
+        err.code = 401;
         return next(err);
     }
     Post.getMyPosts(endPost, userId, postCount, (err, results)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         var data = {
@@ -81,7 +82,7 @@ function myPostList(req, res, next){
             },
             data : results
         }
-        if (results.length ==0 ){
+        if (results.length == 0 ){
             data.page.endPost = null;
         }
         else{
@@ -111,6 +112,10 @@ function writePost(req, res, next){
                     });
                 }
             });
+        }
+        if (!userId){
+            err.code = 401;
+            return next(err);
         }
         err.code = 400;
         return next(err);
@@ -177,8 +182,17 @@ function postDetail(req, res, next){
     console.log('get (get) request of /post/detail');
     const userId = req.query.userId;
     const postId = req.query.postId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
+        err.code = 400;
+        return next(err);
+    }
     Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -199,9 +213,18 @@ function modifyPost(req, res, next){
     const postId = req.body.postId;
     const postContent = req.body.postContent;
     const postImg = req.body.postImg;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
+        err.code = 400;
+        return next(err);
+    }
     if (!postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
+                err.code = 404;
                 return next(err);
             }
             const data = {
@@ -258,10 +281,12 @@ function modifyPost(req, res, next){
         }
     ], (err)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         Post.updatePost(userId, postId, query, (err, updatedPost)=>{
             if (err){
+                err.code = 500;
                 next(err);
                 s3upload.delete(query.postImg, (err, result)=>{
                     if (err){
@@ -287,8 +312,17 @@ function modifyPost(req, res, next){
 function deletePost(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
+        err.code = 400;
+        return next(err);
+    }
     Post.removePost(userId, postId, (err, removedPost)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         const data = {
@@ -308,9 +342,18 @@ function deletePost(req, res, next){
 function likePost(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
+        err.code = 400;
+        return next(err);
+    }
     var query;
     Post.checkPostLiked(userId, postId, (err, liked)=>{
         if ( err ){
+            err.code = 500;
             return next(err);
         }
         if (!liked){
@@ -322,6 +365,7 @@ function likePost(req, res, next){
         }
         Post.likePost(postId, query, (err, updatedPost)=>{
             if (err){
+                err.code = 500;
                 return next(err);
             }
             const data = {

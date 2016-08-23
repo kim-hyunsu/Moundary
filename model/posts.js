@@ -406,53 +406,53 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
     endReply = endReply || 0;    
     count = count || 10;
 
-    // post.findOne({ _id : postId}, 'reply -_id')
-    //     .slice('reply', [endReply, count])
-    //     .then((results)=>{
-    //         console.log('REPLY FOUND >>>', results.reply);
-    //         endReply = endReply+results.reply.length;
-    //         console.log('ENDREPLY ADDED >>>', results.reply);
-    //         callback(null, results.reply, endReply);
-    //     }, (err)=>{
-    //         console.log('REPLY NOT FOUND');
-    //         callback(err, null, null);
-    //     });
-    console.log('USERID>>>', userId);
-    var projection = {
-        'reply._id' : 1,
-        'reply.userId' : 1,
-        'reply.profileThumbnail' : 1,
-        'reply.replyContent' : 1,
-        'reply.nickname' : 1,
-        'reply.replyDate' : 1,
-        'reply.replyLikeCount' : 1,
-        'reply.myLike' : {
-            $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
-        }
-    }
-    post.aggregate()
-        .match({_id : mongoose.Types.ObjectId(postId)})
-        .project('reply -_id')
-        .project({reply : {$slice : ['$reply', endReply, count]}})
-        // .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
-        // .project({'reply.$' : 1})
-        // .unwind('reply')
-        .project(projection)
-        .limit(count)
-        .sort({'reply._id' : -1})
+    post.findOne({ _id : postId}, 'reply -_id')
+        .slice('reply', [endReply, count])
         .then((results)=>{
-            console.log('REPLY FOUND >>>', results);
-            // endReply = results[0].reply[0]._id; =>> todo
-            if (results[0]){
-                endReply = endReply+results[0].reply.length;
-                callback(null, results[0].reply, endReply);
-            } else {
-                callback(null, [], endReply);
-            }
+            console.log('REPLY FOUND >>>', results.reply);
+            endReply = endReply+results.reply.length;
+            console.log('ENDREPLY ADDED >>>', results.reply);
+            callback(null, results.reply, endReply);
         }, (err)=>{
             console.log('REPLY NOT FOUND');
             callback(err, null, null);
         });
+    console.log('USERID>>>', userId);
+    // var projection = {
+    //     'reply._id' : 1,
+    //     'reply.userId' : 1,
+    //     'reply.profileThumbnail' : 1,
+    //     'reply.replyContent' : 1,
+    //     'reply.nickname' : 1,
+    //     'reply.replyDate' : 1,
+    //     'reply.replyLikeCount' : 1,
+    //     'reply.myLike' : {
+    //         $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
+    //     }
+    // }
+    // post.aggregate()
+    //     .match({_id : mongoose.Types.ObjectId(postId)})
+    //     .project('reply -_id')
+    //     .project({reply : {$slice : ['$reply', endReply, count]}})
+    //     // .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
+    //     // .project({'reply.$' : 1})
+    //     // .unwind('reply')
+    //     .project(projection)
+    //     .limit(count)
+    //     .sort({'reply._id' : -1})
+    //     .then((results)=>{
+    //         console.log('REPLY FOUND >>>', results);
+    //         // endReply = results[0].reply[0]._id; =>> todo
+    //         if (results[0]){
+    //             endReply = endReply+results[0].reply.length;
+    //             callback(null, results[0].reply, endReply);
+    //         } else {
+    //             callback(null, [], endReply);
+    //         }
+    //     }, (err)=>{
+    //         console.log('REPLY NOT FOUND');
+    //         callback(err, null, null);
+    //     });
 }
 
 // 포스트  document에 댓글 넣기

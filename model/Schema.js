@@ -26,9 +26,9 @@ const postSchema = Schema({
         profileThumbnail : String,
         nickname : String,  
         replyContent : String,
-        replyDate : { type : Date, default : Date.now},
-        replyLikeCount : {type : Number, default: 0},
-        replyLikeUsers : [Schema.Types.ObjectId] 
+        replyDate : { type : Date, default : Date.now}
+        //, replyLikeCount : {type : Number, default: 0},
+        // replyLikeUsers : [Schema.Types.ObjectId] 
     }]
 });
 

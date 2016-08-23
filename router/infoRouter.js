@@ -30,7 +30,7 @@ function infoList(req, res, next){
     const postCount = parseInt(postAddress.postCount);
     const userId = req.query.userId;
     if (!userId){
-        err.code = 400;
+        err.code = 401;
         return next(err);
     }
     delete postAddress.category;
@@ -40,7 +40,7 @@ function infoList(req, res, next){
 
     const callback = function(err, results){
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         console.log('Got information of near by posts')
@@ -54,7 +54,7 @@ function infoList(req, res, next){
             },
             data : results
         }
-        if (results.length ==0 ){
+        if (results.length == 0 ){
             data.page.endPost = null;
         }
         else{
@@ -102,6 +102,10 @@ function writeInfo(req, res, next){
                     })
                 }
             });
+        }
+        if (!userId){
+            err.code = 401;
+            return next(err);
         }
         err.code = 400;
         return next(err);
@@ -194,13 +198,17 @@ function writeInfo(req, res, next){
 function infoDetail(req, res, next){
     const userId = req.query.userId;
     const postId = req.query.postId;
-    if (!userId || !postId){
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
         err.code = 400;
         return next(err);
     }
     Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -221,7 +229,11 @@ function modifyInfo(req, res, next){
     var dueDate = new Date();
     const userId = req.query.userId;
     const postId = req.body.postId;
-    if (!userId || !postId){
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
         err.code = 400;
         return next(err);
     }
@@ -239,7 +251,7 @@ function modifyInfo(req, res, next){
     if (!category && !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 && !due && !postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
-                err.code = 500;
+                err.code = 404;
                 return next(err);
             }
             const data = {
@@ -386,7 +398,11 @@ function modifyInfo(req, res, next){
 function deleteInfo(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
-    if (!userId || postId){
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
         err.code = 400;
         return next(err);
     }
@@ -416,7 +432,11 @@ function deleteInfo(req, res, next){
 function likeInfo(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
-    if (!userId || !postId){
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
         err.code = 400;
         return next(err);
     }

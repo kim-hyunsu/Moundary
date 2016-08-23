@@ -9,6 +9,7 @@ const Holder = require('../model/friendsHold.js');
 const Notification = require('../model/notifications.js');
 const s3upload = require('./s3upload.js');
 const log = console.log;
+var err = new Error();
 
 // 프로필 페이지, 프로필 수정
 router.route('/user')
@@ -38,8 +39,13 @@ router.put('/friend/:request', requestFriend);
 
 function notificationList(req, res, next){
     const userId = req.query.userId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
     Notification.getNotifications(userId, (err, notifications)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -53,8 +59,13 @@ function notificationList(req, res, next){
 function searchUsers(req, res, next){
     const userId = req.query.userId;
     const nickname = req.query.nickname;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
     User.getUsersByNick(userId, nickname, (err, users)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -67,9 +78,13 @@ function searchUsers(req, res, next){
 
 function friendCandidates(req, res, next){  
     const userId = req.query.userId;
-
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
     Holder.getFriendCandidates(userId, (err, result)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -82,10 +97,15 @@ function friendCandidates(req, res, next){
 
 function friendList(req, res, next){
     const userId = req.query.userId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
     const endUser = req.query.endUser;
     const userCount = parseInt(req.query.userCount);
     User.getFriends(endUser, userId, userCount, (err, result)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -100,12 +120,17 @@ function profile(req, res, next){
     console.log('get (get) request of /user');
     const profileUserId = req.query.profileUserId;  //session에서 긁지 않고 요청으로 받는다.
     const userId = req.query.userId;
-    if (!userId || !profileUserId){
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!profileUserId){
         err.code = 400;
         return next(err);
     }
     User.getProfile(profileUserId, userId, (err, result)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         console.log('GOT THE PROFILE INFORMATION');
@@ -120,10 +145,12 @@ function profile(req, res, next){
 function myProfile(req, res, next){
     const userId = req.query.userId;
     if (!userId){
+        err.code = 401;
         return next(err);
     }
     User.getMyProfile(userId, (err,result)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -137,6 +164,7 @@ function myProfile(req, res, next){
 function modifyProfile(req, res, next){
     const userId = req.query.userId;
     if (!userId){
+        err.code = 401;
         return next(err);
     }
     const nickname = req.body.nickname;
@@ -231,6 +259,7 @@ function modifyProfile(req, res, next){
         }
     ], (err)=>{
         if (err){
+            err.code = 500;
             next(err);
             s3upload.delete(query.coverImg, (err, result)=>{
                 if (err){
@@ -267,10 +296,12 @@ function modifyProfile(req, res, next){
             }
             User.updateUser(userId, query, (err, updatedUser)=>{
                 if (err){
+                    err.code = 500;
                     next(err);
                 } else {
                     Post.updatePostUserInfo(userId, queryForPost, (err)=>{
                         if (err){
+                            err.code = 500;
                             next(err);
                         } else {
                             const data = {
@@ -623,6 +654,10 @@ function modifyProfile(req, res, next){
 
 function userList(req, res, next){
     const userId = req.query.userId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
     const address = {
         area1 : req.query.area1,
         area2 : req.query.area2,
@@ -636,6 +671,7 @@ function userList(req, res, next){
 
     const cb = function(err, result){
         if (err){
+            err.code = 404;
             return next(err);
         }
         var data = {
@@ -668,9 +704,18 @@ function userList(req, res, next){
 function requestFriend(req, res, next){
     const userId = req.query.userId;
     const oppositeUserId = req.body.oppositeUserId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!oppositeUserId){
+        err.code = 400;
+        return next(err);
+    }
     log('1');
     const cb = function(err, result){
         if (err){
+            err.code = 500;
             return next(err);
         }
         log('2');

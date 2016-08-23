@@ -4,6 +4,7 @@ const Post = require('../model/posts.js');
 const User = require('../model/users.js');
 const Notification  = require('../model/notifications.js');
 const fcmPush = require('./push.js');
+var err = new Error();
 
 // 댓글 가져오기, 댓글 쓰기, 댓글 수정, 댓글 삭제
 router.route('/reply')
@@ -19,10 +20,19 @@ function replyList(req, res, next){
     console.log('get (get) request of /reply');
     const userId = req.query.userId;
     const postId = req.query.postId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
+        err.code = 400;
+        return next(err);
+    }
     const endReply = req.query.endReply;
     const replyCount = parseInt(req.query.replyCount);
     Post.getReplies(endReply, userId, postId, replyCount, (err, results, endReply)=>{
         if (err){
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -45,12 +55,23 @@ function replyList(req, res, next){
 function writeReply(req, res, next){
     console.log("Let's start to write a reply");
     const now = new Date();
+    userId = req.query.userId;
+    postId = req.body.postId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId){
+        err.code = 400;
+        return next(err);
+    }
     const reply = req.body;
-    reply.userId = req.query.userId;
+    reply.userId = userId;
     console.log('This is willing to be uploaded reply >>>', reply);
     // reply = {postId : , replyContent : , userId : , replyDate : }
     Post.recordReply(reply, (err, updatedReplyList)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         console.log('Uploaded result');
@@ -87,6 +108,14 @@ function modifyReply(req, res, next){
     const postId = req.body.postId;
     const replyId = req.body.replyId;
     const replyContent = req.body.replyContent;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if(!postId || !replyId){
+        err.code = 400;
+        return next(err);
+    }
     if (!replyContent){
         const data = {
             msg : 'success',
@@ -102,6 +131,7 @@ function modifyReply(req, res, next){
     }
     Post.updateReply(userId, postId, replyId, query, (err)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         const data = {
@@ -119,6 +149,14 @@ function deleteReply(req, res, next){
     const userId = req.query.userId;
     const postId = req.body.postId;
     const replyId = req.body.replyId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    if (!postId || !replyId){
+        err.code = 400;
+        return next(err);
+    }
     const query = {
         $pull : {
             reply : {
@@ -132,6 +170,7 @@ function deleteReply(req, res, next){
     }
     Post.updateReply(userId, postId, replyId, query, (err)=>{
         if (err){
+            err.code = 500;
             return next(err);
         }
         const data = {
@@ -146,49 +185,49 @@ function deleteReply(req, res, next){
 }
 
 function likeReply(req, res, next){
-    const userId = req.query.userId;
-    const postId = req.body.postId;
-    const replyId = req.body.replyId;
-    var query;
-    Post.checkReplyLiked(userId, postId, replyId, (err, liked)=>{
-        if (err){
-            return next(err);
-        }
-        if (!liked){
-            // 아직 좋아요 안함
-            query = {
-                $push : {
-                    'reply.$.replyLikeUsers' : userId
-                },
-                $inc : {
-                    'reply.$.replyLikeCount' : 1
-                }
-            }
-        } else {
-            // 이미 좋아요 함
-            query = {
-                $pull : {
-                    'reply.$.replyLikeUsers' : userId
-                },
-                $inc : {
-                    'reply.$.replyLikeCount' : -1
-                }
-            }
-        }
-        Post.likeReply(postId, replyId, query, (err)=>{
-            if (err){
-                return next(err);
-            }
-            const data = {
-                msg : 'success',
-                data : {
-                    replyId : replyId,
-                    postId : postId
-                }
-            }
-            res.json(data);
-        });
-    });
+    // const userId = req.query.userId;
+    // const postId = req.body.postId;
+    // const replyId = req.body.replyId;
+    // var query;
+    // Post.checkReplyLiked(userId, postId, replyId, (err, liked)=>{
+    //     if (err){
+    //         return next(err);
+    //     }
+    //     if (!liked){
+    //         // 아직 좋아요 안함
+    //         query = {
+    //             $push : {
+    //                 'reply.$.replyLikeUsers' : userId
+    //             },
+    //             $inc : {
+    //                 'reply.$.replyLikeCount' : 1
+    //             }
+    //         }
+    //     } else {
+    //         // 이미 좋아요 함
+    //         query = {
+    //             $pull : {
+    //                 'reply.$.replyLikeUsers' : userId
+    //             },
+    //             $inc : {
+    //                 'reply.$.replyLikeCount' : -1
+    //             }
+    //         }
+    //     }
+    //     Post.likeReply(postId, replyId, query, (err)=>{
+    //         if (err){
+    //             return next(err);
+    //         }
+    //         const data = {
+    //             msg : 'success',
+    //             data : {
+    //                 replyId : replyId,
+    //                 postId : postId
+    //             }
+    //         }
+    //         res.json(data);
+    //     });
+    // });
 }
 
 module.exports = router;
