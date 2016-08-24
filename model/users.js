@@ -201,6 +201,7 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
         log('userAddress >>>', result.userAddress)
         var userAddress = result.userAddress.toObject();
         delete userAddress.area5;  //상세지역은 빼고 '동'까지만 검색
+        delete userAddress.area3;
         for(var key in userAddress){
             query['userAddress.'+key] = userAddress[key];
         }

@@ -27,7 +27,6 @@ Post.getPosts = function(endPost, userId, count, callback){
             }
             const friendList = results.friendList;
             const now = new Date();
-            now.setMonth(now.getMonth()+1);
             const nowMilli = new Date(0);
             console.log('FRIEDNLIST', friendList)
             var promise;
@@ -43,12 +42,15 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postImg : 1, 
                     postThumbnail : 1,
                     postContent : 1,  
-                    postDate : {$subtract: [now, '$postDate']},
+                    postDate :1,
+                    year : {$substr : ['$postDate',0,4]},
+                    month : {$substr : ['$postDate',5,2]},
+                    day : {$substr : ['$postDate', 8,2]},
+                    parsedDate : {$add : [{$subtract: [now, '$postDate']}, nowMilli]},
                     userId: 1, 
                     postLikeUsers: 1,
                     replyCount : 1,
                     postLikeCount : 1,
-                    reply : 1,
                     isLiked : {
                         $setIntersection : ['$postLikeUsers', [mongoose.Types.ObjectId(userId)]]
                     }
@@ -77,7 +79,6 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postLikeUsers: 1,
                     replyCount : 1,
                     postLikeCount : 1,
-                    reply : 1,
                     postLikedAndFriend : {
                         $setIntersection : ['$postLikeUsers', friendList]
                     },
@@ -94,7 +95,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                 {$ne : ['$$year', 1970]},
                 {$concat : ['$year','.','$month','.', '$day']},
                 {$cond : [
-                    {$ne : ['$$month',2]},
+                    {$ne : ['$$month',1]},
                     {$concat : ['$year','.','$month','.', '$day']},
                     {$cond : [
                         {$ne : ['$$day', 1]},
@@ -144,7 +145,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                     $cond : {if : { $ne : ['$isLiked', [] ] }, then : true, else : false }
                 }
             }
-            promise.project(projectionWithMyLike).limit(count).sort({_id:-1}).then((results)=>{
+            promise.project(projectionWithMyLike).sort({_id:-1}).limit(count).then((results)=>{
                 results.hasFriend = hasFriend;
                 callback(null, results);
             }, (err)=>{
@@ -163,6 +164,8 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
     if(!count){
         count = 10;
     }
+    const now = new Date();
+    const nowMilli = new Date(0);
     user.findOne({_id : userId}, 'userAddress -_id', (err, results)=>{
         if (err){
             return callback(err, null);
@@ -171,7 +174,7 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
         const userAddress = results.userAddress.toObject();
         console.log('USERADDRESS >>>', userAddress);
         var query = {};
-        var projection = {
+        var projection1 = {
             category : 1, 
             postAddress : 1, 
             due : 1, 
@@ -180,7 +183,11 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
             postImg : 1, 
             postThumbnail : 1,
             postContent : 1, 
-            postDate : 1, 
+            postDate : 1,
+            year : {$substr : ['$postDate',0,4]},
+            month : {$substr : ['$postDate',5,2]},
+            day : {$substr : ['$postDate', 8,2]},
+            parsedDate : {$add : [{$subtract: [now, '$postDate']}, nowMilli]}, 
             userId: 1, 
             postLikeCount : 1,
             replyCount : 1,
@@ -188,22 +195,75 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
                 $cond : {if : { $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
             }
         }
+        const format = { $cond : [
+            {$ne : ['$$year', 1970]},
+            {$concat : ['$year','.','$month','.', '$day']},
+            {$cond : [
+                {$ne : ['$$month',1]},
+                {$concat : ['$year','.','$month','.', '$day']},
+                {$cond : [
+                    {$ne : ['$$day', 1]},
+                    {$concat : ['약 ',{$substr : ['$$day', 0 ,-1]}, '일 전']},
+                    {$cond : [
+                        '$$hours',
+                        {$concat : ['약 ',{$substr : ['$$hours', 0, -1]}, '시간 전']},
+                        {$cond : [
+                            '$$minutes',
+                            {$concat : ['약 ', {$substr : ['$$minutes', 0, -1]}, '분 전']},
+                            {$cond : [
+                                '$$seconds',
+                                {$concat : ['약 ', {$substr : ['$$seconds', 0, -1]}, '초 전']},
+                                '몇 초 전'
+                            ]}
+                        ]}
+                    ]}
+                ]}
+            ]}
+        ]}
+        var projection2 = {
+            category : 1, 
+            postAddress : 1, 
+            due : 1, 
+            nickname : 1, 
+            profileThumbnail : 1, 
+            postImg : 1, 
+            postThumbnail : 1,
+            postContent : 1, 
+            postDate : {
+                $let : {
+                    vars : {
+                        year : {$year : '$parsedDate'},
+                        month : {$month : '$parsedDate'},
+                        day : {$dayOfMonth : '$parsedDate'},
+                        hours : {$hour : '$parsedDate'},
+                        minutes : {$minute : '$parsedDate'},
+                        seconds:  {$second : '$parsedDate'}
+                    },
+                    in : format
+                }
+            },
+            userId: 1, 
+            postLikeCount : 1,
+            replyCount : 1,
+            myLike : 1
+        }
         for(var key in userAddress){
             query["postAddress."+key] = userAddress[key];
         }
         delete query['postAddress.area5'];
+        delete query['postAddress.area3'];
         if (category){
             query.category = category;
         }
         console.log('QUERY>>>', query);
         // var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
         var promise = post.aggregate().match({_id : { $lt : mongoose.Types.ObjectId(endPost)}})
-                        .match(query).project(projection);
+                        .match(query).project(projection1).project(projection2);
         if (!category){
             promise = promise.match({category : {$ne : 0}});
         }
         console.log('CHECK PROMISE');
-        promise.limit(count).sort({_id:-1})
+        promise.sort({_id:-1}).limit(count)
             .then((result)=>{
                 console.log('POST FOUND >>>', result);
                 result.userAddress = userAddress;
@@ -222,8 +282,10 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
     if (!count){
         count = 10;
     }
+    const now = new Date();
+    const nowMilli = new Date(0);
     var query = {};
-    var projection = {
+    var projection1 = {
         category : 1, 
         postAddress : 1, 
         due : 1, 
@@ -233,12 +295,68 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
         postThumbnail : 1,
         postContent : 1, 
         postDate : 1, 
+        year : {$substr : ['$postDate',0,4]},
+        month : {$substr : ['$postDate',5,2]},
+        day : {$substr : ['$postDate', 8,2]},
+        parsedDate : {$add : [{$subtract: [now, '$postDate']}, nowMilli]},
         userId: 1, 
         postLikeCount : 1,
         replyCount : 1,
         myLike : {
             $cond : {if : { $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
         }
+    }
+    const format = { $cond : [
+        {$ne : ['$$year', 1970]},
+        {$concat : ['$year','.','$month','.', '$day']},
+        {$cond : [
+            {$ne : ['$$month',1]},
+            {$concat : ['$year','.','$month','.', '$day']},
+            {$cond : [
+                {$ne : ['$$day', 1]},
+                {$concat : ['약 ',{$substr : ['$$day', 0 ,-1]}, '일 전']},
+                {$cond : [
+                    '$$hours',
+                    {$concat : ['약 ',{$substr : ['$$hours', 0, -1]}, '시간 전']},
+                    {$cond : [
+                        '$$minutes',
+                        {$concat : ['약 ', {$substr : ['$$minutes', 0, -1]}, '분 전']},
+                        {$cond : [
+                            '$$seconds',
+                            {$concat : ['약 ', {$substr : ['$$seconds', 0, -1]}, '초 전']},
+                            '몇 초 전'
+                        ]}
+                    ]}
+                ]}
+            ]}
+        ]}
+    ]}
+    var projection2 = {
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1, 
+        postThumbnail : 1,
+        postContent : 1, 
+        postDate : {
+            $let : {
+                vars : {
+                    year : {$year : '$parsedDate'},
+                    month : {$month : '$parsedDate'},
+                    day : {$dayOfMonth : '$parsedDate'},
+                    hours : {$hour : '$parsedDate'},
+                    minutes : {$minute : '$parsedDate'},
+                    seconds:  {$second : '$parsedDate'}
+                },
+                in : format
+            }
+        },
+        userId: 1, 
+        postLikeCount : 1,
+        replyCount : 1,
+        myLike : 1
     }
     for(var key in postAddress){
         query["postAddress."+key] = postAddress[key];
@@ -248,11 +366,11 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
     }
     // var promise = post.find(query, '-reply').where('_id').lt(mongoose.Types.ObjectId(endPost));
     var promise = post.aggregate().match({_id : {$lt : mongoose.Types.ObjectId(endPost)}})
-                    .match(query).project(projection);
+                    .match(query).project(projection1).project(projection2);
     if (!category){
         promise = promise.match({category : {$ne : 0}});
     }
-    promise.limit(count).sort({_id:-1})
+    promise.sort({_id:-1}).limit(count)
         .then((results)=>{
             callback(null, results);
         }, (err)=>{
@@ -265,7 +383,9 @@ Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
     endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
     count = count || 10; 
     word = word || '';
-    var projection = {
+    const now = new Date();
+    const nowMilli = new Date(0);
+    var projection1 = {
         category : 1, 
         postAddress : 1, 
         due : 1, 
@@ -275,6 +395,10 @@ Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
         postThumbnail : 1,
         postContent : 1, 
         postDate :1, 
+        year : {$substr : ['$postDate',0,4]},
+        month : {$substr : ['$postDate',5,2]},
+        day : {$substr : ['$postDate', 8,2]},
+        parsedDate : {$add : [{$subtract: [now, '$postDate']}, nowMilli]},
         userId: 1,
         replyCount : 1,
         postLikeCount : 1,
@@ -282,11 +406,63 @@ Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
             $cond : [ {$setIsSubset : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers']}, true, false]
         }
     }
+    const format = { $cond : [
+        {$ne : ['$$year', 1970]},
+        {$concat : ['$year','.','$month','.', '$day']},
+        {$cond : [
+            {$ne : ['$$month',1]},
+            {$concat : ['$year','.','$month','.', '$day']},
+            {$cond : [
+                {$ne : ['$$day', 1]},
+                {$concat : ['약 ',{$substr : ['$$day', 0 ,-1]}, '일 전']},
+                {$cond : [
+                    '$$hours',
+                    {$concat : ['약 ',{$substr : ['$$hours', 0, -1]}, '시간 전']},
+                    {$cond : [
+                        '$$minutes',
+                        {$concat : ['약 ', {$substr : ['$$minutes', 0, -1]}, '분 전']},
+                        {$cond : [
+                            '$$seconds',
+                            {$concat : ['약 ', {$substr : ['$$seconds', 0, -1]}, '초 전']},
+                            '몇 초 전'
+                        ]}
+                    ]}
+                ]}
+            ]}
+        ]}
+    ]}
+    var projection2 = {
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1,
+        postThumbnail : 1,
+        postContent : 1, 
+        postDate : {
+            $let : {
+                vars : {
+                    year : {$year : '$parsedDate'},
+                    month : {$month : '$parsedDate'},
+                    day : {$dayOfMonth : '$parsedDate'},
+                    hours : {$hour : '$parsedDate'},
+                    minutes : {$minute : '$parsedDate'},
+                    seconds:  {$second : '$parsedDate'}
+                },
+                in : format
+            }
+        },
+        userId: 1,
+        replyCount : 1,
+        postLikeCount : 1,
+        myLike : 1
+    }
     post.aggregate()
         .match({_id : {$lt : mongoose.Types.ObjectId(endPost)}, postContent : new RegExp(word)})
         .match({category : {$ne : 0}})
-        .project(projection)
-        .limit(count).sort({_id : -1})
+        .project(projection1).project(projection2)
+        .sort({_id : -1}).limit(count)
         .then((result)=>{
             console.log('POSTS FOUND');
             callback(null, result);
@@ -303,7 +479,9 @@ Post.getMyPosts = function(endPost, userId, count, callback){
     if(!count){
         count = 10;
     }
-    var projection = {
+    const now = new Date();
+    const nowMilli = new Date(0);
+    var projection1 = {
         category : 1, 
         postAddress : 1, 
         due : 1, 
@@ -312,7 +490,11 @@ Post.getMyPosts = function(endPost, userId, count, callback){
         postImg : 1, 
         postThumbnail : 1,
         postContent : 1, 
-        postDate : 1, 
+        postDate : 1,
+        year : {$substr : ['$postDate',0,4]},
+        month : {$substr : ['$postDate',5,2]},
+        day : {$substr : ['$postDate', 8,2]},
+        parsedDate : {$add : [{$subtract: [now, '$postDate']}, nowMilli]}, 
         userId: 1,
         postLikeCount : 1,
         replyCount : 1,
@@ -320,9 +502,61 @@ Post.getMyPosts = function(endPost, userId, count, callback){
             $cond : {if : { $ne : [[mongoose.Types.ObjectId(userId)], '$postLikeUsers' ] }, then : true, else : false }
         }
     }
+    const format = { $cond : [
+        {$ne : ['$$year', 1970]},
+        {$concat : ['$year','.','$month','.', '$day']},
+        {$cond : [
+            {$ne : ['$$month',1]},
+            {$concat : ['$year','.','$month','.', '$day']},
+            {$cond : [
+                {$ne : ['$$day', 1]},
+                {$concat : ['약 ',{$substr : ['$$day', 0 ,-1]}, '일 전']},
+                {$cond : [
+                    '$$hours',
+                    {$concat : ['약 ',{$substr : ['$$hours', 0, -1]}, '시간 전']},
+                    {$cond : [
+                        '$$minutes',
+                        {$concat : ['약 ', {$substr : ['$$minutes', 0, -1]}, '분 전']},
+                        {$cond : [
+                            '$$seconds',
+                            {$concat : ['약 ', {$substr : ['$$seconds', 0, -1]}, '초 전']},
+                            '몇 초 전'
+                        ]}
+                    ]}
+                ]}
+            ]}
+        ]}
+    ]}
+    var projection2 = {
+        category : 1, 
+        postAddress : 1, 
+        due : 1, 
+        nickname : 1, 
+        profileThumbnail : 1, 
+        postImg : 1, 
+        postThumbnail : 1,
+        postContent : 1, 
+        postDate : {
+            $let : {
+                vars : {
+                    year : {$year : '$parsedDate'},
+                    month : {$month : '$parsedDate'},
+                    day : {$dayOfMonth : '$parsedDate'},
+                    hours : {$hour : '$parsedDate'},
+                    minutes : {$minute : '$parsedDate'},
+                    seconds:  {$second : '$parsedDate'}
+                },
+                in : format
+            }
+        }, 
+        userId: 1,
+        postLikeCount : 1,
+        replyCount : 1,
+        myLike : 1
+    }
     post.aggregate().match({userId : mongoose.Types.ObjectId(userId), _id : {$lt : mongoose.Types.ObjectId(endPost)}})
-        .project(projection)
-        .limit(count).sort({_id:-1})
+        .project(projection1).project(projection2)
+        .sort({_id:-1}).limit(count)
         .then((results)=>{
             callback(null, results);
         }, (err)=>{
@@ -449,7 +683,6 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
     // endReply = endReply || "000000000000000000000000"; //object id of 1970.01.01 09:00:00
     endReply = endReply || 0;    
     count = count || 10;
-
     post.findOne({ _id : postId}, 'reply -_id')
         .slice('reply', [endReply, count])
         .then((results)=>{
@@ -462,17 +695,64 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
             callback(err, null, null);
         });
     console.log('USERID>>>', userId);
-    // var projection = {
+    // const now = new Date();
+    // const nowMilli = new Date(0);
+    // var projection1 = {
     //     'reply._id' : 1,
     //     'reply.userId' : 1,
     //     'reply.profileThumbnail' : 1,
     //     'reply.replyContent' : 1,
     //     'reply.nickname' : 1,
     //     'reply.replyDate' : 1,
-    //     'reply.replyLikeCount' : 1,
-    //     'reply.myLike' : {
-    //         $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
-    //     }
+    //     'reply.year' : {$substr : ['$reply.$replyDate',0,4]},
+    //     'reply.month' : {$substr : ['$replyDate',5,2]},
+    //     'reply.day' : {$substr : ['$replyDate', 8,2]},
+    //     'reply.parsedDate' : {$add : [{$subtract: [now, '$replyDate']}, nowMilli]}
+    // }
+    // const format = { $cond : [
+    //     {$ne : ['$$year', 1970]},
+    //     {$concat : ['$year','.','$month','.', '$day']},
+    //     {$cond : [
+    //         {$ne : ['$$month',1]},
+    //         {$concat : ['$year','.','$month','.', '$day']},
+    //         {$cond : [
+    //             {$ne : ['$$day', 1]},
+    //             {$concat : ['약 ',{$substr : ['$$day', 0 ,-1]}, '일 전']},
+    //             {$cond : [
+    //                 '$$hours',
+    //                 {$concat : ['약 ',{$substr : ['$$hours', 0, -1]}, '시간 전']},
+    //                 {$cond : [
+    //                     '$$minutes',
+    //                     {$concat : ['약 ', {$substr : ['$$minutes', 0, -1]}, '분 전']},
+    //                     {$cond : [
+    //                         '$$seconds',
+    //                         {$concat : ['약 ', {$substr : ['$$seconds', 0, -1]}, '초 전']},
+    //                         '몇 초 전'
+    //                     ]}
+    //                 ]}
+    //             ]}
+    //         ]}
+    //     ]}
+    // ]}
+    // var projection2 = {
+    //     'reply._id' : 1,
+    //     'reply.userId' : 1,
+    //     'reply.profileThumbnail' : 1,
+    //     'reply.replyContent' : 1,
+    //     'reply.nickname' : 1,
+    //     'reply.replyDate' : {
+    //         $let : {
+    //             vars : {
+    //                 year : {$year : '$reply.parsedDate'},
+    //                 month : {$month : '$reply.parsedDate'},
+    //                 day : {$dayOfMonth : '$reply.parsedDate'},
+    //                 hours : {$hour : '$reply.parsedDate'},
+    //                 minutes : {$minute : '$reply.parsedDate'},
+    //                 seconds:  {$second : '$reply.parsedDate'}
+    //             },
+    //             in : format
+    //         }
+    //     },
     // }
     // post.aggregate()
     //     .match({_id : mongoose.Types.ObjectId(postId)})
@@ -481,7 +761,7 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
     //     // .match({'reply._id': {$gt : mongoose.Types.ObjectId(endReply)}})
     //     // .project({'reply.$' : 1})
     //     // .unwind('reply')
-    //     .project(projection)
+    //     .project(projection1)
     //     .limit(count)
     //     .sort({'reply._id' : -1})
     //     .then((results)=>{

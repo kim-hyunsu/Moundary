@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+const async = require('async');
 var db = mongoose.connection;
 const notificationSchema = require('./Schema.js').notification;
 const userSchema = require('./Schema.js').user;
@@ -75,6 +75,7 @@ Notification.addLikePush = function(pushData, callback){
 
 Notification.addInfoPushs = function(pushData, postAddress, callback){
     delete postAddress.area5;
+    delete postAddress.area3;
     var query = {};
     for(var key in postAddress){
         query['userAddress.'+key] = postAddress[key];
@@ -104,7 +105,80 @@ Notification.addInfoPushs = function(pushData, postAddress, callback){
 }
 
 Notification.getNotifications = function(userId, callback){
-    notification.find({pullerId : userId}, callback);
+    const now = new Date();
+    const nowMilli = new Date(0);
+    var projection1 = {
+        pushType : 1,
+        postId : 1,
+        category : 1,
+        pusherId : 1,
+        pullerId : 1,
+        pusherNickname : 1,
+        img : 1,
+        content : 1,
+        pushDate : 1,
+        year : {$substr : ['$pushDate',0,4]},
+        month : {$substr : ['$pushDate',5,2]},
+        day : {$substr : ['$pushDate', 8,2]},
+        parsedDate : {$add : [{$subtract: [now, '$pushDate']}, nowMilli]},
+        confirmed :1
+    }
+    const format = { $cond : [
+        {$ne : ['$$year', 1970]},
+        {$concat : ['$year','.','$month','.', '$day']},
+        {$cond : [
+            {$ne : ['$$month',1]},
+            {$concat : ['$year','.','$month','.', '$day']},
+            {$cond : [
+                {$ne : ['$$day', 1]},
+                {$concat : ['약 ',{$substr : ['$$day', 0 ,-1]}, '일 전']},
+                {$cond : [
+                    '$$hours',
+                    {$concat : ['약 ',{$substr : ['$$hours', 0, -1]}, '시간 전']},
+                    {$cond : [
+                        '$$minutes',
+                        {$concat : ['약 ', {$substr : ['$$minutes', 0, -1]}, '분 전']},
+                        {$cond : [
+                            '$$seconds',
+                            {$concat : ['약 ', {$substr : ['$$seconds', 0, -1]}, '초 전']},
+                            '몇 초 전'
+                        ]}
+                    ]}
+                ]}
+            ]}
+        ]}
+    ]}
+    var projection2 = {
+        pushType : 1,
+        postId : 1,
+        category : 1,
+        pusherId : 1,
+        pullerId : 1,
+        pusherNickname : 1,
+        img : 1,
+        content : 1,
+        pushDate : {
+            $let : {
+                vars : {
+                    year : {$year : '$parsedDate'},
+                    month : {$month : '$parsedDate'},
+                    day : {$dayOfMonth : '$parsedDate'},
+                    hours : {$hour : '$parsedDate'},
+                    minutes : {$minute : '$parsedDate'},
+                    seconds:  {$second : '$parsedDate'}
+                },
+                in : format
+            }
+        },
+        confirmed :1
+    }
+    notification.aggregate()
+        .match({pullerId : mongoose.Types.ObjectId(userId)})
+        .then((result)=>{
+            callback(null, result);
+        }, (err)=>{
+            callback(null, err);
+        });
 }
 
 Notification.confirmAlteration = function(userId, postId, callback){
