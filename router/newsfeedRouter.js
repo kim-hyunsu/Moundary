@@ -374,16 +374,15 @@ function likePost(req, res, next){
             }
             res.json(data);
             if (!liked){
-                const pushData = {
+                var pushData = {
                     pushType : 0,
                     postId : postId,
                     category : 1, //좋아요
-                    pusherId : updatedPost.userId,
-                    pusherNickname : updatedPost.nickname,
-                    img : updatedPost.profileThumbnail,
+                    pusherId : userId,
+                    pullerId : updatedPost.userId,
                     content : null
                 }
-                Notification.addPush(pushData, (err, token)=>{
+                Notification.addLikePush(pushData, (err, token)=>{
                     if (err){
                         return console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
                     }

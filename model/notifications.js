@@ -11,7 +11,7 @@ var user = mongoose.model('user', userSchema);
 
 class Notification{};
 
-Notification.addPush = function(pushData, callback){
+Notification.addReplyPush = function(pushData, callback){
     post.aggregate()
         .match({_id : mongoose.Types.ObjectId(pushData.postId)})
         .lookup({from : 'users', localField : 'userId', foreignField : '_id', as : 'puller'})
@@ -34,7 +34,30 @@ Notification.addPush = function(pushData, callback){
         });
 }
 
-Notification.addPushs = function(pushData, postAddress, callback){
+Notification.addLikePush = function(pushData, callback){
+    user.findOne({_id : pushData.pullerId}, 'fcmToken')
+        .then((doc)=>{
+            callback(null, doc.fcmToken);
+        }, (err)=>{
+            callback(err, null);
+        });
+    user.findOne({_id : pushData.pusherId}, 'nickname profileThumbnail')
+        .then((doc)=>{
+            pushData.pusherNickname = doc.nickname;
+            pushData.profileThumbnail = doc.profileThumbnail;
+            notification.create(pushData, (err, result)=>{
+                if (err){
+                    console.log('FAIL TO SAVE A PUSH >>>', pushData);
+                }
+            });
+        }, (err)=>{
+            if (err){
+                console.log('NOT FOUND PUSHER ID >>>', pushData.pusherId);
+            }
+        });
+}
+
+Notification.addInfoPushs = function(pushData, postAddress, callback){
     delete postAddress.area5;
     var query = {};
     for(var key in postAddress){

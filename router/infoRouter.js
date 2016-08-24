@@ -178,7 +178,7 @@ function writeInfo(req, res, next){
                     img : recordedPost.postThumbnail,
                     content : recordedPost.postContent
                 }
-                Notification.addPushs(pushData, postAddress, (err, tokens)=>{
+                Notification.addInfoPushs(pushData, postAddress, (err, tokens)=>{
                     if (err){
                         return console.log('FAIL TO SAVE A PUSH DATA >>>', pushData);
                     }
@@ -467,13 +467,14 @@ function likeInfo(req, res, next){
                 pushType : 1,
                 postId : postId,
                 category : 1, //좋아요
-                pusherId : updatedPost.userId,
-                pusherNickname : updatedPost.nickname,
-                img : updatedPost.profileThumbnail,
+                pusherId : userId,
+                // pusherNickname : updatedPost.nickname,
+                pullerId : updatedPost.userId,
+                // img : updatedPost.profileThumbnail,
                 content : null
             }
             if (!liked){
-                Notification.addPush(pushData, (err, token)=>{
+                Notification.addLikePush(pushData, (err, token)=>{
                     if (err){
                         return console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
                     }

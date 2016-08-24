@@ -89,7 +89,7 @@ function writeReply(req, res, next){
             img : updatedReplyList[updatedReplyList.length-1].profileThumbnail,
             content : updatedReplyList[updatedReplyList.length-1].replyContent
         }
-        Notification.addPush(pushData, (err, token)=>{ //pushData에 pullerId 추가해서 저장
+        Notification.addReplyPush(pushData, (err, token)=>{ //pushData에 pullerId 추가해서 저장
             if (err){
                 return console.log('FAIL TO SAVE A PUSHDATA OR GET TOKEN OF >>>', reply.userId);
             }
