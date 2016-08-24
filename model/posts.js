@@ -26,6 +26,8 @@ Post.getPosts = function(endPost, userId, count, callback){
                 callback(err, null);
             }
             const friendList = results.friendList;
+            const now = new Date();
+            const nowMilli = new Date(0);
             console.log('FRIEDNLIST', friendList)
             var promise;
             var hasFriend = 1;
@@ -40,7 +42,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postImg : 1, 
                     postThumbnail : 1,
                     postContent : 1,  
-                    postDate : 1,
+                    postDate : {$subtract: [new Date, '$postDate']},
                     userId: 1, 
                     postLikeUsers: 1,
                     replyCount : 1,
@@ -65,7 +67,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postImg : 1, 
                     postThumbnail : 1,
                     postContent : 1,  
-                    postDate : 1,
+                    postDate : {$add : [nowMilli, {$subtract: [now, '$postDate']}]} ,
                     userId: 1, 
                     postLikeUsers: 1,
                     replyCount : 1,
@@ -92,7 +94,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                 postImg : 1, 
                 postThumbnail : 1,
                 postContent : 1,  
-                // postDate : calculTime('$postDate', null),
+                postDate : {$minute : '$postDate'},
                 userId: 1, 
                 postLikeCount : 1,
                 replyCount : 1,

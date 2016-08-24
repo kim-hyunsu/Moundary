@@ -17,6 +17,9 @@ Holder.apply = function(userId, oppositeUserId, callback){
     holder.update({ // todo-같은 요청이 두번 올 때 겹치는 문제 고려
         requestUserId : userId, 
         responseUserId : oppositeUserId
+    },{
+        requestUserId : userId, 
+        responseUserId : oppositeUserId
     }, {upsert :true },(err, result)=>{
         if (err){
             return callback(err, null);
