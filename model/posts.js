@@ -27,6 +27,7 @@ Post.getPosts = function(endPost, userId, count, callback){
             }
             const friendList = results.friendList;
             const now = new Date();
+            now.setMonth(now.getMonth()+1);
             const nowMilli = new Date(0);
             console.log('FRIEDNLIST', friendList)
             var promise;
@@ -42,7 +43,7 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postImg : 1, 
                     postThumbnail : 1,
                     postContent : 1,  
-                    postDate : {$subtract: [new Date, '$postDate']},
+                    postDate : {$subtract: [now, '$postDate']},
                     userId: 1, 
                     postLikeUsers: 1,
                     replyCount : 1,
@@ -67,7 +68,11 @@ Post.getPosts = function(endPost, userId, count, callback){
                     postImg : 1, 
                     postThumbnail : 1,
                     postContent : 1,  
-                    postDate : {$add : [nowMilli, {$subtract: [now, '$postDate']}]} ,
+                    postDate :1,
+                    year : {$substr : ['$postDate',0,4]},
+                    month : {$substr : ['$postDate',5,2]},
+                    day : {$substr : ['$postDate', 8,2]},
+                    parsedDate : {$add : [{$subtract: [now, '$postDate']}, nowMilli]},
                     userId: 1, 
                     postLikeUsers: 1,
                     replyCount : 1,
@@ -85,6 +90,31 @@ Post.getPosts = function(endPost, userId, count, callback){
                             .project(projectionWithReply)
                             .match({ $or : [{userId : {$in: friendList}},{'reply.userId' : {$in:friendList}}, {postLikedAndFriend : {$ne : []}}]})                 
             }
+            const format = { $cond : [
+                {$ne : ['$$year', 1970]},
+                {$concat : ['$year','.','$month','.', '$day']},
+                {$cond : [
+                    {$ne : ['$$month',2]},
+                    {$concat : ['$year','.','$month','.', '$day']},
+                    {$cond : [
+                        {$ne : ['$$day', 1]},
+                        {$concat : ['약 ',{$substr : ['$$day', 0 ,-1]}, '일 전']},
+                        {$cond : [
+                            '$$hours',
+                            {$concat : ['약 ',{$substr : ['$$hours', 0, -1]}, '시간 전']},
+                            {$cond : [
+                                '$$minutes',
+                                {$concat : ['약 ', {$substr : ['$$minutes', 0, -1]}, '분 전']},
+                                {$cond : [
+                                    '$$seconds',
+                                    {$concat : ['약 ', {$substr : ['$$seconds', 0, -1]}, '초 전']},
+                                    '몇 초 전'
+                                ]}
+                            ]}
+                        ]}
+                    ]}
+                ]}
+            ]}
             var projectionWithMyLike = { 
                 category : 1, 
                 postAddress : 1, 
@@ -94,7 +124,19 @@ Post.getPosts = function(endPost, userId, count, callback){
                 postImg : 1, 
                 postThumbnail : 1,
                 postContent : 1,  
-                postDate : {$minute : '$postDate'},
+                postDate : {
+                    $let : {
+                        vars : {
+                            year : {$year : '$parsedDate'},
+                            month : {$month : '$parsedDate'},
+                            day : {$dayOfMonth : '$parsedDate'},
+                            hours : {$hour : '$parsedDate'},
+                            minutes : {$minute : '$parsedDate'},
+                            seconds:  {$second : '$parsedDate'}
+                        },
+                        in : format
+                    }
+                },
                 userId: 1, 
                 postLikeCount : 1,
                 replyCount : 1,
@@ -383,11 +425,11 @@ Post.getPostDetail = function(userId, postId, callback){
         'reply.profileThumbnail' : 1,
         'reply.replyContent' : 1,
         'reply.nickname' : 1,
-        'reply.replyDate' : 1,
-        'reply.replyLikeCount' : 1,
-        'reply.myLike' : {
-            $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
-        }
+        'reply.replyDate' : 1
+        // ,'reply.replyLikeCount' : 1,
+        // 'reply.myLike' : {
+        //     $cond : [{ $setIsSubset : [[mongoose.Types.ObjectId(userId)], '$reply.replyLikeUsers']}, true, false]
+        // }
     };
     post.aggregate()
         .match({_id : mongoose.Types.ObjectId(postId)})

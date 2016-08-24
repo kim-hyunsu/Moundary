@@ -35,26 +35,42 @@ Notification.addReplyPush = function(pushData, callback){
 }
 
 Notification.addLikePush = function(pushData, callback){
-    user.findOne({_id : pushData.pullerId}, 'fcmToken')
-        .then((doc)=>{
-            callback(null, doc.fcmToken);
-        }, (err)=>{
-            callback(err, null);
-        });
-    user.findOne({_id : pushData.pusherId}, 'nickname profileThumbnail')
-        .then((doc)=>{
-            pushData.pusherNickname = doc.nickname;
-            pushData.profileThumbnail = doc.profileThumbnail;
-            notification.create(pushData, (err, result)=>{
-                if (err){
-                    console.log('FAIL TO SAVE A PUSH >>>', pushData);
-                }
-            });
-        }, (err)=>{
-            if (err){
-                console.log('NOT FOUND PUSHER ID >>>', pushData.pusherId);
-            }
-        });
+    async.parallel({
+        token : function(cb){
+            user.findOne({_id : pushData.pullerId}, 'fcmToken')
+                .then((doc)=>{
+                    cb(null, doc.fcmToken);
+                }, (err)=>{
+                    callback(err, null);
+                });
+        },
+        pushData : function(cb){
+            user.findOne({_id : pushData.pusherId}, 'nickname profileThumbnail')
+                .then((doc)=>{
+                    pushData.pusherNickname = doc.nickname;
+                    pushData.profileThumbnail = doc.profileThumbnail;
+                    cb(null, pushData);
+                    notification.create(pushData, (err, result)=>{
+                        if (err){
+                            console.log('FAIL TO SAVE A PUSH >>>', pushData);
+                        }
+                        
+                    });
+                }, (err)=>{
+                    if (err){
+                        console.log('NOT FOUND PUSHER ID >>>', pushData.pusherId);
+                    }
+                    cb(null,null);
+                });
+        }
+    }, (err, result)=>{
+        if (err){
+            return callback(err, null, null);
+        }
+        callback(null, result.token, result.pushData);
+    });
+
+
 }
 
 Notification.addInfoPushs = function(pushData, postAddress, callback){

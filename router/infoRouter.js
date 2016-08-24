@@ -468,13 +468,11 @@ function likeInfo(req, res, next){
                 postId : postId,
                 category : 1, //좋아요
                 pusherId : userId,
-                // pusherNickname : updatedPost.nickname,
                 pullerId : updatedPost.userId,
-                // img : updatedPost.profileThumbnail,
                 content : null
             }
             if (!liked){
-                Notification.addLikePush(pushData, (err, token)=>{
+                Notification.addLikePush(pushData, (err, token, pushData)=>{
                     if (err){
                         return console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
                     }

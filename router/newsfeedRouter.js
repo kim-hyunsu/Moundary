@@ -382,7 +382,7 @@ function likePost(req, res, next){
                     pullerId : updatedPost.userId,
                     content : null
                 }
-                Notification.addLikePush(pushData, (err, token)=>{
+                Notification.addLikePush(pushData, (err, token, pushData)=>{
                     if (err){
                         return console.log('FAIL TO SAVE A PUSH OR GET A TOKEN OF >>>', userId);
                     }

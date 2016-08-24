@@ -8,6 +8,7 @@ const Post = require('../model/posts.js');
 const Holder = require('../model/friendsHold.js');
 const Notification = require('../model/notifications.js');
 const s3upload = require('./s3upload.js');
+const fcmPush = require('./push.js');
 const log = console.log;
 var err = new Error();
 
@@ -730,9 +731,9 @@ function requestFriend(req, res, next){
                 return cb(err, null);
             }
             cb(null, result);
-            User.getProfile(userId, (err, profile)=>{
+            User.getMyProfile(userId, (err, profile)=>{
                 if (err){
-                    return console.log('FAIL TO GET FCM TOKEN OF >>>', userId);
+                    return console.log('FAIL TO GET PROFILE OF >>>', userId);
                 }
                 const pushData = {
                     pushType : 2,
@@ -743,10 +744,16 @@ function requestFriend(req, res, next){
                     img : profile.profileThumbnail,
                     content : null
                 }
-                fcmPush([profile.fcmToken], pushData, (err, response)=>{
+                User.getToken(oppositeUserId, (err, token)=>{
                     if (err){
-                        console.log('');
+                        return console.log('FAIL TO GET FCM TOKEN OF >>>', oppositeUserId);
                     }
+                    fcmPush([token], pushData, (err, response)=>{
+                        if (err){
+                            console.log('FAIL TO PUSH >>>', err);
+                        }
+                        console.log('PUSH COMPLETE >>>', response)
+                    });
                 });
             });
         });

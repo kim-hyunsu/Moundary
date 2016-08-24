@@ -19,7 +19,8 @@ Holder.apply = function(userId, oppositeUserId, callback){
         responseUserId : oppositeUserId
     },{
         requestUserId : userId, 
-        responseUserId : oppositeUserId
+        responseUserId : oppositeUserId,
+        requestDate : new Date()
     }, {upsert :true },(err, result)=>{
         if (err){
             return callback(err, null);

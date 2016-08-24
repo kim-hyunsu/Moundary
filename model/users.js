@@ -70,7 +70,7 @@ User.getProfile = function(profileUserId, userId, callback){
 
 // 나의 프로필 페이지
 User.getMyProfile = function(userId, callback){
-    user.findOne({_id: userId}, 'profileImg coverImg nickname userAddress friendList babyAge', (err, result)=>{
+    user.findOne({_id: userId}, 'profileImg profileThumbnail coverImg nickname userAddress friendList babyAge', (err, result)=>{
         if (err){
             return callback(err, null);
         }
@@ -250,6 +250,16 @@ User.getImageUrl = function(what, userId, callback){
             return callback(err, null);
         }
         callback(null, doc);
+    });
+}
+
+// 토큰 얻기
+User.getToken = function(userId, callback){
+    user.findOne({_id : userId}, 'fcmToken', (err,doc)=>{
+        if (err){
+            return callback(err, null);
+        }
+        callback(null, doc.fcmToken);
     });
 }
 

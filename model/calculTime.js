@@ -17,13 +17,13 @@ var calculTime = function(time,format){
             break;
         }
         if (diff.years){
-            if (prefix == ''){
+            if (prefix == '약'){
                 return (time.getFullYear()+'년 '+(time.getMonth()+1)+'월 '+time.getDate()+'일');
             } else {
                 return (prefix+diff.year+'년 '+diff.months+'개월'+postfix);
             }
         } else if (diff.months){
-            if (prefix == ''){
+            if (prefix == '약'){
                 return (time.getFullYear()+'년 '+(time.getMonth()+1)+'월 '+time.getDate()+'일');
             } else {
                 return (prefix+diff.months+'개월'+postfix);
