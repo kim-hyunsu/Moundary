@@ -678,16 +678,14 @@ function userList(req, res, next){
         var data = {
             msg : 'success',
             myAddress : address,
-            page : {
-                userCount : result.length
-            },
+            userCount : result.length,
             data : result
         }
         if (result.length ==0){ //해당 지역에 사람이 아무도 없다면
-            data.page.endUser = null;
+            data.endUser = null;
         }
         else{
-            data.page.endUser = result[result.length-1]._id;
+            data.endUser = result[result.length-1]._id;
         }
         res.json(data);
     }

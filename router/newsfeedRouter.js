@@ -45,16 +45,14 @@ function newsList(req, res, next){
         var data = {
             msg : 'success',
             hasFriend : hasFriend,
-            page : {
-                postCount : results.length
-            },
+            postCount : results.length,
             data : results
         }
         if (results.length ==0 ){
-            data.page.endPost = null;
+            data.endPost = null;
         }
         else{
-            data.page.endPost = results[results.length-1]._id
+            data.endPost = results[results.length-1]._id
         }
         res.json(data);
     });
@@ -77,16 +75,14 @@ function myPostList(req, res, next){
         }
         var data = {
             msg : 'success',
-            page : {
-                postCount : results.length
-            },
+            postCount : results.length,
             data : results
         }
         if (results.length == 0 ){
-            data.page.endPost = null;
+            data.endPost = null;
         }
         else{
-            data.page.endPost = results[results.length-1]._id
+            data.endPost = results[results.length-1]._id
         }
         res.json(data);
     });

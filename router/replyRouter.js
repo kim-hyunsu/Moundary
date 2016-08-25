@@ -37,10 +37,8 @@ function replyList(req, res, next){
         }
         const data = {
             msg : 'success',
-            replyPage : {
-                replyCount : results.length,
-                endReply : endReply
-            },
+            replyCount : results.length,
+            endReply : endReply,
             data : results
         }
         res.json(data);

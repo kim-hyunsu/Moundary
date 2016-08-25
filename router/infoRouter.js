@@ -49,16 +49,14 @@ function infoList(req, res, next){
         var data = {
             msg : 'success',
             myAddress : myAddress,
-            page : {
-                postCount : results.length
-            },
+            postCount : results.length,
             data : results
         }
         if (results.length == 0 ){
-            data.page.endPost = null;
+            data.endPost = null;
         }
         else{
-            data.page.endPost = results[results.length-1]._id
+            data.endPost = results[results.length-1]._id
         }
         res.json(data);
     }
