@@ -161,6 +161,7 @@ User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count,
         user.find(query, 'profileThumbnail nickname userAddress babyAge')
             .where('babyAge').gte(min).lte(max)
             .where('_id').nin(result.friendList)
+            .where('_id').ne(userId)
             .limit(count).sort({_id:-1}).lean()
             .then( (results)=>{
                 async.each(results, (ele, cb)=>{
@@ -209,6 +210,7 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
         user.find(query, 'profileThumbnail nickname userAddress babyAge')
             .where('babyAge').gte(min).lte(max)
             .where('_id').nin(result.friendList)
+            .where('_id').ne(userId)
             .limit(count).sort({_id:-1}).lean()
             .then( (results)=>{
                 async.each(results, (ele, cb)=>{

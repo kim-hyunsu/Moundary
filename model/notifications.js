@@ -22,6 +22,9 @@ Notification.addReplyPush = function(pushData, callback){
             if (docs.length == 0){
                 return callback(err, null);
             }
+            if (pushData.pusherId == docs[0].puller[0]._id){
+                return callback(err, null);
+            }
             callback(null, docs[0].puller[0].fcmToken);
             pushData.pullerId = docs[0].puller[0]._id;
             notification.create(pushData, (err, result)=>{
@@ -48,7 +51,7 @@ Notification.addLikePush = function(pushData, callback){
             user.findOne({_id : pushData.pusherId}, 'nickname profileThumbnail')
                 .then((doc)=>{
                     pushData.pusherNickname = doc.nickname;
-                    pushData.profileThumbnail = doc.profileThumbnail;
+                    pushData.img = doc.profileThumbnail;
                     cb(null, pushData);
                     notification.create(pushData, (err, result)=>{
                         if (err){
@@ -90,9 +93,6 @@ Notification.addInfoPushs = function(pushData, postAddress, callback){
             tokens.push(ele.fcmToken);
             pushData.pullerId = ele._id;
             notification.create(pushData, (err, result)=>{
-                if (err){
-                    callback(err, null);
-                }
                 cb();
             });
         }, (err)=>{
@@ -174,6 +174,7 @@ Notification.getNotifications = function(userId, callback){
     }
     notification.aggregate()
         .match({pullerId : mongoose.Types.ObjectId(userId)})
+        .project(projection1).project(projection2)
         .then((result)=>{
             callback(null, result);
         }, (err)=>{

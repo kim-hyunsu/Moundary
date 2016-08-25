@@ -373,7 +373,7 @@ function likePost(req, res, next){
                 postId : updatedPost._id
             }
             res.json(data);
-            if (!liked){
+            if (!liked && userId != updatedPost.userId.toString()){
                 var pushData = {
                     pushType : 0,
                     postId : postId,

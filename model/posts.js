@@ -888,7 +888,7 @@ Post.updatePost = function(userId, postId, query, callback){
 }
 
 Post.removePost = function(userId, postId, callback){
-    post.findOneAndRemove({_id : postId, userId : userId}, {fields : 'postImg postThumbnail'})
+    post.findOneAndRemove({_id : postId, userId : userId}, {fields : 'postImg postThumbnail userId'})
         .then((doc)=>{
             callback(null, doc);
         }, (err)=>{
