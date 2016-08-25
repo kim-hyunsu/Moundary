@@ -20,7 +20,7 @@ function searchPost(req, res, next){
     const word = req.query.word;
     Post.getInfoPostsByWord(word, endPost, userId, postCount, (err, results)=>{
         if (err){
-            err.code = 404;
+            err.code = 500;
             return next(err);
         }
         console.log('preparing to response');
@@ -44,7 +44,7 @@ function recommandWords(req, res, next){
     const word = req.query.word;
     Post.getContentsKeyword(word, (err, wordList)=>{
         if (err){
-            err.code = 404;
+            err.code = 500;
             return next(err);
         }
         const data = {

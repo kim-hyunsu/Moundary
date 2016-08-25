@@ -208,7 +208,7 @@ function infoDetail(req, res, next){
     }
     Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
-            err.code = 404;
+            err.code = 500;
             return next(err);
         }
         const data = {
@@ -251,7 +251,7 @@ function modifyInfo(req, res, next){
     if (!category && !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 && !due && !postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
-                err.code = 404;
+                err.code = 500;
                 return next(err);
             }
             const data = {

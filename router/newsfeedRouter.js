@@ -37,7 +37,7 @@ function newsList(req, res, next){
     }
     Post.getPosts(endPost, userId, postCount, (err, results)=>{
         if(err){
-            err.code = 404;
+            err.code = 500;
             return next(err);
         }
         const hasFriend = results.hasFriend;
@@ -72,7 +72,7 @@ function myPostList(req, res, next){
     }
     Post.getMyPosts(endPost, userId, postCount, (err, results)=>{
         if (err){
-            err.code = 404;
+            err.code = 500;
             return next(err);
         }
         var data = {
@@ -192,7 +192,7 @@ function postDetail(req, res, next){
     }
     Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
-            err.code = 404;
+            err.code = 500;
             return next(err);
         }
         const data = {
@@ -224,7 +224,7 @@ function modifyPost(req, res, next){
     if (!postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
-                err.code = 404;
+                err.code = 500;
                 return next(err);
             }
             const data = {
