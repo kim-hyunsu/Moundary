@@ -74,6 +74,8 @@ User.getMyProfile = function(userId, callback){
         if (err){
             return callback(err, null);
         }
+        result = result.toObject();
+        result.babyAge = result.babyAge.getFullYear()+'.'+result.babyAge.getMonth()+'.'+result.babyAge.getDate();
         callback(null, result);
     });
 }
