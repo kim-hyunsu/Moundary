@@ -74,8 +74,17 @@ User.getMyProfile = function(userId, callback){
         if (err){
             return callback(err, null);
         }
+        const timediff = require('timediff');
+        const diff = timediff(result.babyAge, new Date());
+        if (diff.years && diff.years != 1){
+            age = diff.year+'살';
+        } else if (diff.months) {
+            age = diff.months+'개월'
+        } else {
+            age = diff.days+'일'
+        }
         result = result.toObject();
-        result.babyAge = result.babyAge.getFullYear()+'.'+result.babyAge.getMonth()+'.'+result.babyAge.getDate();
+        result.babyAge = age+' ('+result.babyAge.getFullYear()+'.'+result.babyAge.getMonth()+'.'+result.babyAge.getDate()+')';
         callback(null, result);
     });
 }
