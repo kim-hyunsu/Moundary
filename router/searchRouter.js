@@ -20,19 +20,21 @@ function searchPost(req, res, next){
     const word = req.query.word;
     Post.getInfoPostsByWord(word, endPost, userId, postCount, (err, results)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         console.log('preparing to response');
         var data = {
             msg : 'success',
-            postCount : results.length,
+            page : {
+                postCount : results.length
+            },
             data : results
         }
         if (results.length == 0){
-            data.endPost = null;
+            data.page.endPost = null;
         } else {
-            data.endPost = results[results.length-1]._id;
+            data.page.endPost = results[results.length-1]._id;
         }
         res.json(data);
     });
@@ -42,7 +44,7 @@ function recommandWords(req, res, next){
     const word = req.query.word;
     Post.getContentsKeyword(word, (err, wordList)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {

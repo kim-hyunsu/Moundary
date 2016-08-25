@@ -46,7 +46,7 @@ function notificationList(req, res, next){
     }
     Notification.getNotifications(userId, (err, notifications)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -66,7 +66,7 @@ function searchUsers(req, res, next){
     }
     User.getUsersByNick(userId, nickname, (err, users)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -85,7 +85,7 @@ function friendCandidates(req, res, next){
     }
     Holder.getFriendCandidates(userId, (err, result)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -106,7 +106,7 @@ function friendList(req, res, next){
     const userCount = parseInt(req.query.userCount);
     User.getFriends(endUser, userId, userCount, (err, result)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -131,7 +131,7 @@ function profile(req, res, next){
     }
     User.getProfile(profileUserId, userId, (err, result)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         console.log('GOT THE PROFILE INFORMATION');
@@ -151,7 +151,7 @@ function myProfile(req, res, next){
     }
     User.getMyProfile(userId, (err,result)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -672,20 +672,22 @@ function userList(req, res, next){
 
     const cb = function(err, result){
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         var data = {
             msg : 'success',
             myAddress : address,
-            userCount : result.length,
+            page : {
+                userCount : result.length
+            },
             data : result
         }
         if (result.length ==0){ //해당 지역에 사람이 아무도 없다면
-            data.endUser = null;
+            data.page.endUser = null;
         }
         else{
-            data.endUser = result[result.length-1]._id;
+            data.page.endUser = result[result.length-1]._id;
         }
         res.json(data);
     }

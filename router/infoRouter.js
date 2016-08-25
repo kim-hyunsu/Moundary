@@ -49,14 +49,16 @@ function infoList(req, res, next){
         var data = {
             msg : 'success',
             myAddress : myAddress,
-            postCount : results.length,
+            page : {
+                postCount : results.length
+            },
             data : results
         }
         if (results.length == 0 ){
-            data.endPost = null;
+            data.page.endPost = null;
         }
         else{
-            data.endPost = results[results.length-1]._id
+            data.page.endPost = results[results.length-1]._id
         }
         res.json(data);
     }
@@ -206,7 +208,7 @@ function infoDetail(req, res, next){
     }
     Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -249,7 +251,7 @@ function modifyInfo(req, res, next){
     if (!category && !address.area1 && !address.area2 && !address.area3 && !address.area4 && !address.area5 && !due && !postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
-                err.code = 500;
+                err.code = 404;
                 return next(err);
             }
             const data = {

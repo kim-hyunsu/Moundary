@@ -32,13 +32,15 @@ function replyList(req, res, next){
     const replyCount = parseInt(req.query.replyCount);
     Post.getReplies(endReply, userId, postId, replyCount, (err, results, endReply)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
             msg : 'success',
-            replyCount : results.length,
-            endReply : endReply,
+            replyPage : {
+                replyCount : results.length,
+                endReply : endReply
+            },
             data : results
         }
         res.json(data);

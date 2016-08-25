@@ -37,7 +37,7 @@ function newsList(req, res, next){
     }
     Post.getPosts(endPost, userId, postCount, (err, results)=>{
         if(err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const hasFriend = results.hasFriend;
@@ -45,14 +45,16 @@ function newsList(req, res, next){
         var data = {
             msg : 'success',
             hasFriend : hasFriend,
-            postCount : results.length,
+            page : {
+                postCount : results.length
+            },
             data : results
         }
         if (results.length ==0 ){
-            data.endPost = null;
+            data.page.endPost = null;
         }
         else{
-            data.endPost = results[results.length-1]._id
+            data.page.endPost = results[results.length-1]._id
         }
         res.json(data);
     });
@@ -70,19 +72,21 @@ function myPostList(req, res, next){
     }
     Post.getMyPosts(endPost, userId, postCount, (err, results)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         var data = {
             msg : 'success',
-            postCount : results.length,
+            page : {
+                postCount : results.length
+            },
             data : results
         }
         if (results.length == 0 ){
-            data.endPost = null;
+            data.page.endPost = null;
         }
         else{
-            data.endPost = results[results.length-1]._id
+            data.page.endPost = results[results.length-1]._id
         }
         res.json(data);
     });
@@ -188,7 +192,7 @@ function postDetail(req, res, next){
     }
     Post.getPostDetail(userId, postId, (err, results)=>{
         if (err){
-            err.code = 500;
+            err.code = 404;
             return next(err);
         }
         const data = {
@@ -220,7 +224,7 @@ function modifyPost(req, res, next){
     if (!postContent && !postImg || postImg.size == 0){
         Post.getPostDetail(postId, (err, result)=>{
             if (err){
-                err.code = 500;
+                err.code = 404;
                 return next(err);
             }
             const data = {
