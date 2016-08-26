@@ -85,8 +85,8 @@ function writeInfo(req, res, next){
         area5 : req.body.area5
     };
     const postImg = req.body.postImg;
+    var dueDate = new Date();
     if (due){
-        var dueDate = new Date();
         dueDate.setDate(dueDate.getDate()+parseInt(req.body.due));
     } else {
         dueDate.setDate(dueDate.getDate()+7);
