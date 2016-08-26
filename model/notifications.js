@@ -191,9 +191,9 @@ Notification.confirmAlteration = function(userId, postId, callback){
 }
 
 Notification.deleteOldNotifications = function(callback){
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(now.getDate()-7);
-    notification.remove({pushDate: {$lt : oneWeekAgo}}, (err, result)=>{
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(now.getDate()-3);
+    notification.remove({pushDate: {$lt : threeDaysAgo}}, (err, result)=>{
         if (err){
             callback(err, null);
         }
