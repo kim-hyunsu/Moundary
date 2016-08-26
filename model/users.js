@@ -74,18 +74,22 @@ User.getMyProfile = function(userId, callback){
         if (err){
             return callback(err, null);
         }
-        const timediff = require('timediff');
-        const diff = timediff(result.babyAge, new Date());
-        var age;
-        if (diff.years && diff.years != 1){
-            age = diff.years+'살';
-        } else if (diff.months) {
-            age = diff.months+'개월'
-        } else {
-            age = diff.days+'일'
-        }
         result = result.toObject();
-        result.babyAge = age+' ('+result.babyAge.getFullYear()+'.'+result.babyAge.getMonth()+'.'+result.babyAge.getDate()+')';
+        if (result.babyAge){
+            const timediff = require('timediff');
+            const diff = timediff(result.babyAge, new Date());
+            var age;
+            if (diff.years && diff.years != 1){
+                age = diff.years+'살';
+            } else if (diff.months) {
+                age = diff.months+'개월'
+            } else {
+                age = diff.days+'일'
+            }
+            result.babyAge = age+' ('+result.babyAge.getFullYear()+'.'+result.babyAge.getMonth()+'.'+result.babyAge.getDate()+')';
+        } else {
+            result.babyAge = '';
+        }
         callback(null, result);
     });
 }
