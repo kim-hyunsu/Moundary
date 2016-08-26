@@ -175,6 +175,7 @@ Notification.getNotifications = function(userId, callback){
     notification.aggregate()
         .match({pullerId : mongoose.Types.ObjectId(userId)})
         .project(projection1).project(projection2)
+        .sort({_id : -1})
         .then((result)=>{
             callback(null, result);
         }, (err)=>{

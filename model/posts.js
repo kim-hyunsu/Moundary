@@ -14,12 +14,9 @@ class Post{}
 
 // 친구소식
 Post.getPosts = function(endPost, userId, count, callback){
-    if (!endPost){
-        endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-    }
-    if (!count){
-        count = 10;
-    }
+    endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
+    count = count || 60;
+
     user.findOne({_id : userId}, 'friendList -_id')
         .then((results)=>{
             if (!results){  
@@ -158,12 +155,9 @@ Post.getPosts = function(endPost, userId, count, callback){
 
 // 사용자의 주변의 동네소식 불러오기
 Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
-    if(!endPost){
-        endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-    }   
-    if(!count){
-        count = 10;
-    }
+    endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59  
+    count = count || 60;
+
     const now = new Date();
     const nowMilli = new Date(0);
     user.findOne({_id : userId}, 'userAddress -_id', (err, results)=>{
@@ -276,12 +270,9 @@ Post.getInfoPostsNearby = function(endPost, userId, category, count, callback){
 
 // 사용자가 입력한 주소에 해당하는 동네소식 불러오기, postAddress is Object
 Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, callback){
-    if(!endPost){
-        endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-    }
-    if (!count){
-        count = 10;
-    }
+    endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
+    count = count || 60;
+
     const now = new Date();
     const nowMilli = new Date(0);
     var query = {};
@@ -381,7 +372,7 @@ Post.getInfoPostsByAddress = function(endPost, postAddress, category, count, cal
 Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
     console.log('searching posts....');
     endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-    count = count || 10; 
+    count = count || 60; 
     word = word || '';
     const now = new Date();
     const nowMilli = new Date(0);
@@ -473,12 +464,9 @@ Post.getInfoPostsByWord = function(word, endPost, userId, count, callback){
 
 // 내 이야기 불러오기
 Post.getMyPosts = function(endPost, userId, count, callback){
-    if(!endPost){
-        endPost = "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59
-    }   
-    if(!count){
-        count = 10;
-    }
+    endPost = endPost || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59  
+    count = count || 60;
+
     const now = new Date();
     const nowMilli = new Date(0);
     var projection1 = {
@@ -682,7 +670,7 @@ Post.getReplies = function(endReply, userId, postId, count, callback){
 
     // endReply = endReply || "000000000000000000000000"; //object id of 1970.01.01 09:00:00
     endReply = endReply || 0;    
-    count = count || 10;
+    count = count || 20;
     post.findOne({ _id : postId}, 'reply -_id')
         .slice('reply', [endReply, count])
         .then((results)=>{
