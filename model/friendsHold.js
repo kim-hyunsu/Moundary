@@ -20,7 +20,8 @@ Holder.apply = function(userId, oppositeUserId, callback){
     },{
         requestUserId : userId, 
         responseUserId : oppositeUserId,
-        requestDate : new Date()
+        requestDate : new Date(),
+        new : true
     }, {upsert :true },(err, result)=>{
         if (err){
             return callback(err, null);
@@ -40,7 +41,6 @@ Holder.cancel = function(userId, oppositeUserId, callback){
 
 //친구 수락
 Holder.allow = function(userId, oppositeUserId, callback){
-    var error;
     holder.remove({
         requestUserId : oppositeUserId,
         responseUserId : userId
@@ -143,6 +143,15 @@ Holder.getFriendCandidates = function(userId, callback){
         }, (err)=>{
             callback(err, null);
         });
+}
+
+Holder.changeNewFromTrueToFalse = function(userId, callback){
+    holder.update({responseUserId : userId, new : true}, {new : false}, {multi : true}, (err, result)=>{
+        if (err){
+            callback(err);
+        }
+        callback();
+    });
 }
 
 module.exports = Holder;

@@ -29,6 +29,9 @@ router.get('/user/search', searchUsers);
 // 알람 목록 가져오기
 router.get('/user/notification', notificationList);
 
+// 새로운 알람 갯수 가져오기
+router.get('/user/notification/count', newNotificationCount);
+
 // 친구 목록 가져오기
 router.get('/friend', friendList);
 
@@ -52,6 +55,30 @@ function notificationList(req, res, next){
         const data = {
             msg : 'success',
             data : notifications
+        }
+        res.json(data);
+        Notification.changeNewFromTrueToFalse(userId, (err)=>{
+            if (err){
+                console.log('FAIL TO CHANGE THE "NEW" OF NOTIFICATIONS FROM TRUE TO FALSE WHOSE >>>', userId);
+            }
+        });
+    });
+}
+
+function newNotificationCount(req, res, next){
+    const userId = req.query.userId;
+    if (!userId){
+        err.code = 401;
+        return next(err);
+    }
+    Notification.getNewNotificationCount(userId, (err, notificationCount)=>{
+        if (err){
+            err.code = 500;
+            return next(err);
+        }
+        const data = {
+            msg : 'success',
+            notificationCount : notificationCount
         }
         res.json(data);
     });
@@ -93,6 +120,11 @@ function friendCandidates(req, res, next){
             data : result
         }
         res.json(data);
+        Holder.changeNewFromTrueToFalse(userId, (err)=>{
+            if (err){
+                console.log('FAIL TO CHANGE THE "NEW" OF FRIENDSHOLD FROM TRUE TO FALSE WHOSE >>>', userId);
+            }
+        });
     });
 }
 

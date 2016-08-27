@@ -16,10 +16,11 @@ User.getFriends = function(endUser, userId, count, callback){
     endUser = endUser || "ffce5eef0000000000000000";
     count = count || 60;
     user.findOne({_id : userId}, 'friendList -_id', (err, result)=>{
-        if (err){
+        if (err || !result){
             return callback(err, null);
         }
         const friendList = result.friendList;
+        console.log('FRIENDLIST >>>', friendList);
         user.find({_id:{$in:friendList}}, 'nickname profileThumbnail userAddress babyAge')
             .where('_id').lt(endUser).limit(count).sort({_id:-1})
             .then((results)=>{

@@ -4,9 +4,11 @@ var db = mongoose.connection;
 const notificationSchema = require('./Schema.js').notification;
 const userSchema = require('./Schema.js').user;
 const postSchema = require('./Schema.js').post;
+const holderSchema = require('./Schema.js').holder;
 var notification = mongoose.model('notification', notificationSchema);
 var post = mongoose.model('post', postSchema);
 var user = mongoose.model('user', userSchema);
+var holder = mongoose.model('hold', holderSchema);
 
 
 class Notification{};
@@ -188,6 +190,7 @@ Notification.confirmAlteration = function(userId, postId, callback){
         if (err){
             callback(err);
         }
+        callback();
     });
 }
 
@@ -198,6 +201,28 @@ Notification.deleteOldNotifications = function(callback){
         if (err){
             callback(err, null);
         }
+        callback();
+    });
+}
+
+Notification.getNewNotificationCount = function(userId, callback){
+    async.parallel({
+        notificationCount : (cb) => notification.find({pullerId : userId, new : true}).count(cb),
+        friendCount : (cb) => holder.find({responseUserId : userId, new : true}).count(cb)
+    }, (err, counts)=>{
+        if (err){
+            return callback(err, null);
+        }
+        callback(null, counts.notificationCount+counts.friendCount);
+    });
+}
+
+Notification.changeNewFromTrueToFalse = function(userId, callback){
+    notification.update({pullerId : userId, new: true}, {new :false}, {multi : true}, (err, result)=>{
+        if (err){
+            callback(err);
+        }
+        callback();
     });
 }
 

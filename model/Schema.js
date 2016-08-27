@@ -71,7 +71,8 @@ module.exports.user = userSchema;
 const holderSchema =  Schema({
     requestUserId : { type : Schema.Types.ObjectId, ref : 'user'},
     responseUserId : {type : Schema.Types.ObjectId, ref : 'user'},
-    requestDate : {type : Date, default: Date.now}
+    requestDate : {type : Date, default: Date.now},
+    new : {type : Boolean, default : true}
 });
 
 module.exports.holder = holderSchema;
@@ -86,7 +87,8 @@ const notificationSchema = Schema({
     content : String,
     img : String,
     pushDate : {type : Date, default : Date.now},
-    confirmed : {type : Boolean, default : false}
+    confirmed : {type : Boolean, default : false},
+    new : {type : Boolean, default : true}
 });
 
 module.exports.notification = notificationSchema;
