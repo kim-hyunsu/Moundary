@@ -22,7 +22,7 @@ User.getFriends = function(endUser, userId, count, callback){
         const friendList = result.friendList;
         console.log('FRIENDLIST >>>', friendList);
         user.find({_id:{$in:friendList}}, 'nickname profileThumbnail userAddress babyAge')
-            .where('_id').lt(endUser).limit(count).sort({_id:-1})
+            .where('_id').lt(endUser).sort({_id:-1}).limit(count)
             .then((results)=>{
                 callback(null, results);
             }, (err)=>{
@@ -185,37 +185,88 @@ User.getUsersByAddress = function(endUser, userId, userAddress, ageRange, count,
         for(var key in userAddress){
             query['userAddress.'+key] = userAddress[key];
         }
-        user.find(query, 'profileThumbnail nickname userAddress babyAge')
-            .where('babyAge').gte(min).lte(max)
-            .where('_id').nin(result.friendList)
-            .where('_id').ne(userId)
-            .limit(count).sort({_id:-1}).lean()
-            .then( (results)=>{
-                async.each(results, (ele, cb)=>{
-                    holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
-                        if (count == 0){
-                            ele.isRequestUser = false;
-                        }
-                        else{
-                            ele.isRequestUser = true;
-                        }
-                        cb()
-                    });
-                }, (err)=>{
-                    if (err){
-                        return callback(err, null);
-                    }
-                    callback(null, results);
-                });
+        const now = new Date();
+        const nowMilli = new Date(0);
+        const projection1 = {
+            profileThumbnail :1,
+            nickname : 1,
+            userAddress : 1,
+            babyAge : 1,
+            parsedAge : {$add : [{$subtract: [now, '$babyAge']}, nowMilli]}
+        }
+        const format = {$cond : [
+            {$ne : ['$$year', 0]},
+            {$concat : [{$substr : ['$$year', 0, -1]}, '살']},
+            {$cond : [
+                {$ne : ['$$month', 1]},
+                {$concat : [{$substr : ['$$month', 0, -1]}, '개월']},
+                {$cond : [
+                    {$ne : ['$$day', 1]},
+                    {$concat : [{$substr : ['$$day', 0, -1]}, '일']},
+                    ''
+                ]}
+            ]}
+        ]}
+        const projection2 = {
+            profileThumbnail :1,
+            nickname : 1,
+            userAddress : 1,
+            babyAge : {
+                $let : {
+                    vars : {
+                        year : {$subtract : [{$year : '$parsedAge'}, 1970]},
+                        month : {$month : '$parsedAge'},
+                        day : {$dayOfMonth : '$parsedAge'}
+                    },
+                    in : format
+                }
+            }  
+        }
+        user.aggregate()
+            .match(query)
+            .match({babyAge : {$gte : min}})
+            .match({babyAge : {$lte : max}})
+            .match({_id : {$nin : result.friendList}})
+            .match({_id : {$ne : mongoose.Types.ObjectId(userId)}})
+            .project(projection1).project(projection2)
+            .sort({_id :-1})
+            .limit(count)
+            .then((docs)=>{
+                callback(null, docs);
             }, (err)=>{
                 callback(err, null);
-            });        
+            });
+        // user.find(query, 'profileThumbnail nickname userAddress babyAge')
+        //     .where('babyAge').gte(min).lte(max)
+        //     .where('_id').nin(result.friendList)
+        //     .where('_id').ne(userId)
+        //     .sort({_id:-1}).limit(count).lean()
+        //     .then( (results)=>{
+        //         async.each(results, (ele, cb)=>{
+        //             holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
+        //                 if (count == 0){
+        //                     ele.isRequestedUser = false;
+        //                 }
+        //                 else{
+        //                     ele.isRequestedUser = true;
+        //                 }
+        //                 cb()
+        //             });
+        //         }, (err)=>{
+        //             if (err){
+        //                 return callback(err, null);
+        //             }
+        //             callback(null, results);
+        //         });
+        //     }, (err)=>{
+        //         callback(err, null);
+        //     });        
     });
 
 }
 
 // 사용자 주변 사용자들 불러오기
-User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
+User.getUsersNearbyTest = function(endUser, userId, ageRange, count, callback){
     //default values
     endUser = endUser || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59   
     count = count || 60;
@@ -234,43 +285,241 @@ User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
             query['userAddress.'+key] = userAddress[key];
         }
         log('query >>>', query);
-        user.find(query, 'profileThumbnail nickname userAddress babyAge')
-            .where('babyAge').gte(min).lte(max)
-            .where('_id').nin(result.friendList)
-            .where('_id').ne(userId)
-            .limit(count).sort({_id:-1}).lean()
-            .then( (results)=>{
-                async.each(results, (ele, cb)=>{
-                    holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
-                        if (count == 0){
-                            ele.isRequestedUser = false;
-                        }
-                        else{
-                            ele.isRequestedUser = true;
-                        }
-                        cb()
-                    });
-                }, (err)=>{
-                    if (err){
-                        return callback(err, null);
-                    }
-                    callback(null, results);
-                });
+        const now = new Date();
+        const nowMilli = new Date(0);
+        const projection1 = {
+            profileThumbnail :1,
+            nickname : 1,
+            userAddress : 1,
+            babyAge : 1,
+            parsedAge : {$add : [{$subtract: [now, '$babyAge']}, nowMilli]}
+        }
+        const format = {$cond : [
+            {$ne : ['$$year', 0]},
+            {$concat : [{$substr : ['$$year', 0, -1]}, '살']},
+            {$cond : [
+                {$ne : ['$$month', 1]},
+                {$concat : [{$substr : ['$$month', 0, -1]}, '개월']},
+                {$cond : [
+                    {$ne : ['$$day', 1]},
+                    {$concat : [{$substr : ['$$day', 0, -1]}, '일']},
+                    ''
+                ]}
+            ]}
+        ]}
+        const projection2 = {
+            profileThumbnail :1,
+            nickname : 1,
+            userAddress : 1,
+            babyAge : {
+                $let : {
+                    vars : {
+                        year : {$subtract : [{$year : '$parsedAge'}, 1970]},
+                        month : {$month : '$parsedAge'},
+                        day : {$dayOfMonth : '$parsedAge'}
+                    },
+                    in : format
+                }
+            }  
+        }
+        user.aggregate()
+            .match(query)
+            .match({babyAge : {$gte : min}})
+            .match({babyAge : {$lte : max}})
+            .match({_id : {$nin : result.friendList}})
+            .match({_id : {$ne : mongoose.Types.ObjectId(userId)}})
+            .project(projection1).project(projection2)
+            .sort({_id :-1})
+            .limit(count)
+            .then((docs)=>{
+                callback(null, docs);
             }, (err)=>{
                 callback(err, null);
             });
+        // user.find(query, 'profileThumbnail nickname userAddress babyAge')
+        //     .where('babyAge').gte(min).lte(max)
+        //     .where('_id').nin(result.friendList)
+        //     .where('_id').ne(userId)
+        //     .sort({_id:-1}).limit(count).lean()
+        //     .then( (results)=>{
+        //         async.each(results, (ele, cb)=>{
+        //             holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
+        //                 if (count == 0){
+        //                     ele.isRequestedUser = false;
+        //                 }
+        //                 else{
+        //                     ele.isRequestedUser = true;
+        //                 }
+        //                 cb()
+        //             });
+        //         }, (err)=>{
+        //             if (err){
+        //                 return callback(err, null);
+        //             }
+        //             callback(null, results);
+        //         });
+        //     }, (err)=>{
+        //         callback(err, null);
+        //     });
+    });
+}
+
+// 사용자 주변 사용자들 불러오기
+User.getUsersNearby = function(endUser, userId, ageRange, count, callback){
+    //default values
+    endUser = endUser || "ffce5eef0000000000000000"; // ObjectId of 2105.12.31 23:59:59   
+    count = count || 60;
+
+    user.findOne({_id : userId}, 'userAddress babyAge friendList -_id', (err, result)=>{
+        if (err){
+            return callback(err, null);
+        }
+        var [min, max] = ageRangeSwitch(ageRange);
+        var query = {};
+        log('ageRange min:%s, max :%s >>>', min,max);
+        log('userAddress >>>', result.userAddress)
+        var userAddress = result.userAddress.toObject();
+        delete userAddress.area5;  //상세지역은 빼고 '동'까지만 검색
+        delete userAddress.area3;
+        for(var key in userAddress){
+            query['userAddress.'+key] = userAddress[key];
+        }
+        log('query >>>', query);
+        const now = new Date();
+        const nowMilli = new Date(0);
+        const projection1 = {
+            profileThumbnail :1,
+            nickname : 1,
+            userAddress : 1,
+            babyAge : 1,
+            parsedAge : {$add : [{$subtract: [now, '$babyAge']}, nowMilli]}
+        }
+        const format = {$cond : [
+            {$ne : ['$$year', 0]},
+            {$concat : [{$substr : ['$$year', 0, -1]}, '살']},
+            {$cond : [
+                {$ne : ['$$month', 1]},
+                {$concat : [{$substr : ['$$month', 0, -1]}, '개월']},
+                {$cond : [
+                    {$ne : ['$$day', 1]},
+                    {$concat : [{$substr : ['$$day', 0, -1]}, '일']},
+                    ''
+                ]}
+            ]}
+        ]}
+        const projection2 = {
+            profileThumbnail :1,
+            nickname : 1,
+            userAddress : 1,
+            babyAge : {
+                $let : {
+                    vars : {
+                        year : {$subtract : [{$year : '$parsedAge'}, 1970]},
+                        month : {$month : '$parsedAge'},
+                        day : {$dayOfMonth : '$parsedAge'}
+                    },
+                    in : format
+                }
+            }  
+        }
+        user.aggregate()
+            .match(query)
+            .match({babyAge : {$gte : min}})
+            .match({babyAge : {$lte : max}})
+            .match({_id : {$nin : result.friendList}})
+            .match({_id : {$ne : mongoose.Types.ObjectId(userId)}})
+            .project(projection1).project(projection2)
+            .sort({_id :-1})
+            .limit(count)
+            .then((docs)=>{
+                callback(null, docs);
+            }, (err)=>{
+                callback(err, null);
+            });
+        // user.find(query, 'profileThumbnail nickname userAddress babyAge')
+        //     .where('babyAge').gte(min).lte(max)
+        //     .where('_id').nin(result.friendList)
+        //     .where('_id').ne(userId)
+        //     .sort({_id:-1}).limit(count).lean()
+        //     .then( (results)=>{
+        //         async.each(results, (ele, cb)=>{
+        //             holder.where({requestUserId : userId, responseUserId : ele._id}).count((err, count)=>{
+        //                 if (count == 0){
+        //                     ele.isRequestedUser = false;
+        //                 }
+        //                 else{
+        //                     ele.isRequestedUser = true;
+        //                 }
+        //                 cb()
+        //             });
+        //         }, (err)=>{
+        //             if (err){
+        //                 return callback(err, null);
+        //             }
+        //             callback(null, results);
+        //         });
+        //     }, (err)=>{
+        //         callback(err, null);
+        //     });
     });
 }
 
 // 입력된 닉네임과 유사한 닉네임의 유저들 검색
 User.getUsersByNick = function(userId, nickname, callback){
-    user.find({nickname : new RegExp('^'+nickname)}, 'nickname profileThumbnail userAddress babyAge')
-        .where('_id').ne(userId)
+    const now = new Date();
+    const nowMilli = new Date(0);
+    const projection1 = {
+        profileThumbnail :1,
+        nickname : 1,
+        userAddress : 1,
+        babyAge : 1,
+        parsedAge : {$add : [{$subtract: [now, '$babyAge']}, nowMilli]}
+    }
+    const format = {$cond : [
+        {$ne : ['$$year', 0]},
+        {$concat : [{$substr : ['$$year', 0, -1]}, '살']},
+        {$cond : [
+            {$ne : ['$$month', 1]},
+            {$concat : [{$substr : ['$$month', 0, -1]}, '개월']},
+            {$cond : [
+                {$ne : ['$$day', 1]},
+                {$concat : [{$substr : ['$$day', 0, -1]}, '일']},
+                ''
+            ]}
+        ]}
+    ]}
+    const projection2 = {
+        profileThumbnail :1,
+        nickname : 1,
+        userAddress : 1,
+        babyAge : {
+            $let : {
+                vars : {
+                    year : {$subtract : [{$year : '$parsedAge'}, 1970]},
+                    month : {$month : '$parsedAge'},
+                    day : {$dayOfMonth : '$parsedAge'}
+                },
+                in : format
+            }
+        }  
+    }
+    user.aggregate()
+        .match({nickname : new RegExp('^'+nickname)})
+        .match({_id : {$ne : mongoose.Types.ObjectId(userId)}})
+        .project(projection1).project(projection2)
+        .sort({_id :-1})
         .then((docs)=>{
             callback(null, docs);
         }, (err)=>{
             callback(err, null);
         });
+    // user.find({nickname : new RegExp('^'+nickname)}, 'nickname profileThumbnail userAddress babyAge')
+    //     .where('_id').ne(userId)
+    //     .then((docs)=>{
+    //         callback(null, docs);
+    //     }, (err)=>{
+    //         callback(err, null);
+    //     });
 }
 
 // 이미지 삭제를 위해 기존 이미지 url 얻기
