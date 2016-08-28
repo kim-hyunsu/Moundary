@@ -6,6 +6,8 @@ const formidable = require('express-formidable');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const Agenda = require('agenda');
+const fs = require('fs');
+const async = require('async');
 
 // mongodb connection, mongoose used
 const url = 'mongodb://52.78.98.25:27017/moundary';
@@ -47,10 +49,26 @@ agenda.define('deleteOldNotifications', (job, done)=>{
         done(null);
     });
 });
+agenda.define('deleteRemainedFiles', (job, done)=>{
+    fs.readdir('./upload/*', (err, list)=>{
+        if (err){
+            console.log('NO UPLOAD FILE');
+        }
+        async.eachSeries(list, (ele, next)=>{
+            fs.unlink('./upload/'+ele, (err)=>{
+                if (err){
+                    console.log('FAIL TO DELETE >>>', ele);
+                }
+                next(null, null);
+            });
+        });
+    });
+})
 // execute the agenda every hours
 agenda.on('ready', ()=>{
     agenda.every('1 hours', 'deleteExpiredPosts');
     agenda.every('1 hours', 'deleteOldNotifications');
+    agenda.every('1 hours', 'deleteRemainedFiles');
     agenda.start();
 });
 
