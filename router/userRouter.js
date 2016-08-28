@@ -78,7 +78,9 @@ function newNotificationCount(req, res, next){
         }
         const data = {
             msg : 'success',
-            notificationCount : notificationCount
+            data : {
+                notificationCount : notificationCount
+            }
         }
         res.json(data);
     });
