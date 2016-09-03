@@ -35,13 +35,11 @@ function newsList(req, res, next){
         err.code = 401;
         return next(err);
     }
-    Post.getPosts(endPost, userId, postCount, (err, results)=>{
+    Post.getPosts(endPost, userId, postCount, (err, results, hasFriend)=>{
         if(err){
             err.code = 500;
             return next(err);
         }
-        const hasFriend = results.hasFriend;
-        delete results.hasFriend;
         var data = {
             msg : 'success',
             hasFriend : hasFriend,
